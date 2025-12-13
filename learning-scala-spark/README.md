@@ -19,6 +19,7 @@ Official Spark master repo : https://github.com/apache/spark
 
 
 
+https://chatgpt.com/share/693ceb48-ae1c-800c-bd25-f43b20333705
 
 Prompt: Full stack Scala developer  
 
