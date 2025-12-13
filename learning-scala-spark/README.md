@@ -7,4 +7,5 @@ https://www.sundog-education.com/sparkscala/
 
 NYC spark scala code from Kaggal and other platforms find out all code and data from there and test and run the understand.
 
-Coursera Best course for Scala is 
+Coursera Best course for Scala is https://www.coursera.org/specializations/scala?
+Functional Programming in Scala Specialization By EPFL
