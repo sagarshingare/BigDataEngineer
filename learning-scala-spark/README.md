@@ -9,3 +9,9 @@ NYC spark scala code from Kaggal and other platforms find out all code and data 
 
 Coursera Best course for Scala is https://www.coursera.org/specializations/scala?
 Functional Programming in Scala Specialization By EPFL
+
+
+Official Apache Foundation all Opens oruce project master repos : https://github.com/apache 
+Official Spark master repo : https://github.com/apache/spark 
+
+
