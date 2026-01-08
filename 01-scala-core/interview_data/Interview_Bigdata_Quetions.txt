@@ -1,0 +1,2003 @@
+BigData Interview Quetions and answer for senior data engineer:
+
+1) Do you have location constraint / Shifts , Is it okay to work with UK and US client timings.
+2) Are you ready to learn new technologies and work in different projects.
+3) How do you manage your timings when you work with Teams which are Geographically distributed .
+
+Working with geographically distributed teams does come with its set of challenges, particularly when it comes to managing time zone differences. However, I’ve developed strategies to ensure smooth collaboration. I use world clocks and scheduling tools to keep track of time zones and plan meetings accordingly, ensuring we make the most of overlapping hours when possible. For situations where time overlap is limited, I rely on asynchronous communication using tools like Slack and project management software to keep everyone updated and involved.
+
+I also set clear expectations about response times and deadlines, making sure that all team members are aligned on the critical tasks and are flexible in adjusting their schedules if needed. I find that with the right mix of asynchronous and synchronous communication, along with the use of the right tools, teams can be productive and efficient no matter where they are located.
+
+
+General 
+1) How do you do code review ( what all metrics do you consider ?)
+
+Code reviews are essential to maintaining high-quality, maintainable, and secure code. When reviewing code, I focus on several key areas:
+
+Code Quality: Ensuring clarity, readability, proper commenting, and functionality. I check for any potential bugs and see if there is any code duplication that can be refactored.
+Maintainability: I look for modular, scalable code that adheres to principles like the Single Responsibility Principle (SRP). I also check for adequate test coverage.
+Performance: I ensure the code is optimized for speed and memory usage, especially in performance-critical sections.
+Security: I verify that input validation, authentication, and encryption are properly implemented.
+Consistency: I make sure the code follows the team’s style guidelines and is consistent with existing patterns in the codebase.
+
+
+
+Soo cover below points in interview :
+1) good sql knowledge
+	- Aggregate functions
+	- Window functions  ( LEAD , LAG , ROW_NUMBER() , RANK() , DENSE_RANK() )
+
+I have strong knowledge of SQL, including the use of aggregate functions like SUM(), AVG(), COUNT(), and MAX() for summarizing and analyzing data. These functions are essential for reports and KPIs, such as calculating total sales or the average order value.
+
+I also regularly use window functions such as LEAD(), LAG(), ROW_NUMBER(), RANK(), and DENSE_RANK() to perform advanced analysis across partitions of data, like comparing values between consecutive rows or ranking results. For example, I’ve used LAG() to calculate the difference in sales between consecutive days and ROW_NUMBER() to assign a unique rank to employees based on their total sales.
+
+I’m mindful of performance when using window functions, especially with large datasets, and make sure to filter data appropriately to avoid unnecessary overhead. Overall, these SQL features have been invaluable in both data analysis and reporting tasks.
+
+Example: "Let’s say I need to compare the sales of each day against the previous day's sales to see how sales are trending. I could use LAG() to get the previous day's sales alongside the current day’s sales."
+SELECT order_date, sales_amount,
+       LAG(sales_amount, 1) OVER (ORDER BY order_date) AS previous_day_sales
+FROM daily_sales;
+
+
+2) spark knowledge 
+- What happens when we hit spark-submit command 
+Driver Program Creation:
+
+The driver program is created. This is the main entry point for your Spark application (typically where the main() method resides).
+Application Submission:
+
+The spark-submit command submits the application to the Spark cluster. The cluster manager (e.g., YARN, Mesos, or Kubernetes) is responsible for scheduling the execution of your application across the available resources.
+Resource Allocation:
+
+The cluster manager allocates the necessary resources (executors and cores) based on the configurations in the spark-submit command (e.g., number of executors, memory, cores).
+Execution Plan:
+
+The driver constructs an execution plan and divides it into stages. It sends the stages to the worker nodes (executors) for execution.
+Task Scheduling:
+
+Each stage is further divided into tasks. These tasks are distributed across available worker nodes based on data locality.
+Job Execution:
+
+As tasks complete, Spark fetches the output and starts executing the next stages. This continues until the entire job is finished.
+
+
+- lazy evaluation 
+Spark uses lazy evaluation, meaning that operations on Spark RDDs or DataFrames are not executed immediately. Instead, they are recorded as a DAG (Directed Acyclic Graph) of operations. The actual computation happens only when an action is performed (e.g., count(), collect(), save(), etc.).
+
+Why Lazy Evaluation?
+Optimization: Spark can optimize the entire DAG, such as filtering before shuffling, reducing unnecessary computations.
+Efficiency: It avoids intermediate computations, thus saving resources by only performing the computation when required.
+For example:
+
+df = spark.read.csv("data.csv")
+filtered_df = df.filter(df['age'] > 30)
+transformed_df = filtered_df.select('name', 'age')
+# The actual computation happens when an action like .show() is invoked.
+transformed_df.show()
+
+
+- spark data types --> 
+Spark supports several data types, similar to traditional databases. These are:
+
+Primitive Types: Integer, Long, Double, Float, String, Boolean, etc.
+Complex Types:
+ArrayType: Represents a list of values.
+MapType: Represents a key-value pair.
+StructType: Represents a struct (like a row in a table).
+DecimalType: Represents precise decimal values.
+For example:
+
+from pyspark.sql.types import StructType, StructField, IntegerType, StringType
+schema = StructType([
+    StructField("id", IntegerType(), True),
+    StructField("name", StringType(), True)
+])
+df = spark.read.schema(schema).json("data.json")
+
+
+- What are spark operations  --> Transofrmations and actions 
+Transformations: These are lazy operations that transform one RDD/DataFrame into another. They are non-blocking and build a DAG.
+Examples: map(), filter(), groupBy(), select(), join().
+Actions: These trigger the actual computation and execution of the DAG.
+Examples: count(), collect(), show(), save(), reduce().
+Example:
+
+# Transformation
+df_transformed = df.filter(df['age'] > 30)
+
+# Action
+df_transformed.show()
+
+
+- Difference between RDD , dataframe and dataset 
+RDD (Resilient Distributed Dataset):
+
+The lowest-level abstraction in Spark. It is immutable, distributed, and fault-tolerant.
+Operations on RDDs are performed via map(), filter(), etc.
+Provides fine-grained control, but lacks optimization features like Catalyst (used in DataFrames).
+DataFrame:
+
+Higher-level abstraction built on top of RDDs, structured and optimized.
+Represents data as rows and columns (similar to a table in a database).
+Supports SQL queries, and provides optimization via the Catalyst optimizer.
+Dataset:
+
+Available in Scala and Java (not in Python). It is a strongly-typed version of DataFrame.
+Combines the optimizations of DataFrames with the type-safety of RDDs.
+Example:
+# DataFrame
+df = spark.read.csv("data.csv")
+
+# Dataset (Scala/Java only)
+val ds: Dataset[Person] = spark.read.json("data.json").as[Person]
+
+- What is data skewness and how do you handle it in Spark?  
+Data Skewness occurs when certain partitions of data are significantly larger than others, leading to performance bottlenecks because tasks dealing with large partitions take much longer than tasks with smaller partitions.
+
+Handling Data Skewness:
+Salting: Add a random prefix or suffix to the key before performing a join or groupBy to evenly distribute the data across partitions.
+Broadcast Join: Use broadcast() for small datasets to avoid shuffling the large dataset.
+Repartitioning: Repartition the dataset before performing transformations that involve wide operations (e.g., groupBy(), join()).
+
+	
+- What is the difference between SParkContext and SparkSession
+SparkContext:
+The entry point to Spark functionality in older versions (prior to Spark 2.x). It's responsible for connecting to the cluster and managing RDD operations.
+SparkSession:
+Introduced in Spark 2.x, SparkSession is the new entry point to Spark's functionality. It includes all the functionalities of SparkContext and additionally manages DataFrame, Dataset, and SQL operations.
+Example:
+# Before Spark 2.x
+sc = SparkContext()
+
+# After Spark 2.x
+spark = SparkSession.builder.appName("Example").getOrCreate()
+
+
+- What are the parameters you consider in Spark job tuning in onprem or in cloud. With respect to spark configs and Cluster configs ) 
+Tuning Spark jobs involves optimizing both Spark Configurations and Cluster Configurations:
+
+Spark Configurations:
+spark.executor.memory: Size of memory allocated to each executor.
+spark.executor.cores: Number of cores to allocate to each executor.
+spark.num.executors: Number of executors to run.
+spark.sql.shuffle.partitions: Number of partitions to use when shuffling data (default is 200).
+spark.sql.autoBroadcastJoinThreshold: Size threshold for broadcasting a table in joins.
+Cluster Configurations:
+CPU and Memory Resources: Number of CPU cores and amount of memory per node.
+Node Type (On-Prem/Cloud): Cloud services often have auto-scaling, while on-prem resources are typically static.
+Storage (HDFS, S3, etc.): The type and speed of storage can significantly affect Spark job performance.
+Cloud-Specific Configurations:
+In the cloud, you may use services like AWS EMR, Azure HDInsight, or Databricks which can auto-scale resources based on workload demand.
+
+
+- 
+- How can you determine into which bucket the record will go to? How does data get distributed into buckets in Hive?
+In Hive, data is distributed into buckets using a hashing function on a specified column (often the partition key or any column you choose). The number of buckets is specified when creating the table using CLUSTERED BY. The number of buckets should generally correspond to the number of reducers you want for a query.
+
+Example:
+CREATE TABLE employee (
+  emp_id INT,
+  emp_name STRING
+)
+CLUSTERED BY (emp_id) INTO 10 BUCKETS;
+The emp_id column is hashed, and records are distributed into 10 buckets.
+
+
+- Compare Avro , Parquet , ORC 
+These are common formats for storing data in the Hadoop ecosystem. Here's a brief comparison:
+
+Avro:
+
+Row-based format.
+Ideal for write-heavy workloads (data ingestion).
+Schema is embedded with the data.
+Supports complex nested data.
+Parquet:
+
+Columnar format.
+Optimized for read-heavy workloads, especially analytical queries.
+Supports complex nested data and is highly compressed.
+Faster for queries that require scanning specific columns.
+ORC:
+
+Columnar format.
+Best suited for read-heavy operations with better compression than Parquet in some cases.
+Optimized for Hive queries.
+Generally used in Hadoop ecosystems (especially Hive).
+
+
+- Let's say you have a long running underperforming spark job. How would you try optimize this Spark job? 
+	What step would you take to achieve better performance?
+To optimize a long-running or underperforming Spark job, consider the following steps:
+
+Data Partitioning:
+
+Ensure proper partitioning (e.g., repartition() or coalesce()) to avoid shuffling large amounts of data.
+Caching:
+
+Cache intermediate datasets that are reused multiple times to avoid recomputation.
+Broadcast Joins:
+
+Use broadcast() for small datasets to avoid shuffle operations during joins.
+Avoid Wide Transformations:
+
+Minimize operations like groupBy() and join() that require wide shuffling.
+Adjust Shuffle Partitions:
+
+Tune the number of shuffle partitions via spark.sql.shuffle.partitions to match the cluster size and data volume.
+Use DataFrames/Datasets Instead of RDDs:
+
+DataFrames/Datasets benefit from Catalyst optimization, which improves performance over RDD-based transformations.
+Examine Job UI:
+
+Use the Spark UI to identify stages or tasks that are taking longer and find bottlenecks (e.g., straggling tasks, skewed partitions).
+Dynamic Allocation:
+
+Enable dynamic resource allocation (spark.dynamicAllocation.enabled) to optimize executor usage during the job execution.
+By combining these strategies, you can significantly improve the performance of your Spark jobs.
+
+
+When we hit a spark-submit 
+	1. How many applications does it create ----> 1 application for each spark-submit
+Answer: Each time you run a spark-submit command, one application is created.
+
+Explanation:
+
+The spark-submit command is the entry point for submitting a Spark application to the cluster.
+A Spark application is a complete entity consisting of the driver program and the various Spark jobs it launches.
+Even if your application involves multiple jobs, they all belong to the same application.
+Each spark-submit is essentially creating one logical Spark application.
+
+
+	2. How many JOB's does it create      -------> How many actions are there those many jobs gets created.
+Answer: The number of jobs created depends on how many actions are called in your Spark application.
+
+Explanation:
+
+Spark applications are made up of a series of transformations (which are lazy) and actions (which trigger computation).
+Each action (such as collect(), show(), save(), count(), etc.) triggers the execution of one job.
+For example, if your application has three actions, Spark will create three jobs, each corresponding to one of the actions.
+
+
+
+	3. What is stage and what is task. --> All the steps that are required to solve the Job is known as stage ( each step is one stage ) 
+										---> Minimum 1 stage and task will be there for sure.
+										---> The actual work to solve the stage is know as tasks . ( Tasks are depends on the partitions ) 
+Answer:
+Stage: A stage is a set of transformations in the Spark job that can be executed together without requiring any shuffling of data. Stages are created based on wide transformations (e.g., groupBy(), join(), etc.) that trigger a shuffle of data.
+
+A stage represents one step in the overall execution of a job.
+Narrow transformations (like map(), filter(), flatMap()) don’t cause a shuffle and can typically be executed within the same stage.
+Task: A task is the smallest unit of work in Spark and corresponds to a partition of the data being processed. Each task is executed by one executor.
+
+A task processes a single partition of data. If the data is partitioned into n partitions, there will be n tasks for that stage.
+Explanation:
+
+Stages are defined based on transformations that cause a shuffle (wide transformations) vs those that do not (narrow transformations).
+A stage can have multiple tasks, each task working on a partition of the data.
+Example: If you have a groupBy() transformation followed by a count() action, this would result in a shuffle, thus creating a new stage.
+
+
+
+	4. How many stages does it create ------------------> Complex 
+Answer: The number of stages created depends on the wide transformations that cause data shuffling.
+
+Explanation:
+
+Spark creates a new stage each time it encounters a wide transformation that requires data shuffling.
+If your application only involves narrow transformations (like map(), filter()), there may only be one stage.
+The number of stages is determined by the transformations that cause Spark to re-partition the data, such as groupBy(), join(), reduceByKey(), etc.
+Example:
+
+If you have a chain of transformations with no wide operations, Spark will generate only one stage.
+If you have a groupBy() or j
+
+	5. How many tasks   -------------> Complex
+Answer: The number of tasks is determined by the number of partitions in the data and the number of stages.
+
+Explanation:
+
+Each stage is broken down into tasks, and each task works on one partition of the data.
+For each stage, the number of tasks is equal to the number of partitions in that stage.
+The default number of partitions is 200 for wide transformations (such as repartition() or groupBy()), but this can be adjusted using the spark.sql.shuffle.partitions configuration parameter.
+If your data is partitioned into N partitions, Spark will launch N tasks for the stage.
+Example:
+
+If you have 1,000 partitions, Spark will create 1,000 tasks for the stage.
+If you use repartition(500) before an operation, it will result in 500 tasks for the stage.
+
+
+	6. How many partitions will be created after a wide transformaitons ---> default 200 partitions will be created 
+Answer: By default, 200 partitions will be created after a wide transformation (such as groupBy(), join(), repartition()).
+
+Explanation:
+
+Wide transformations (e.g., groupBy(), join(), distinct()) trigger a shuffle, which means data will be redistributed across the cluster.
+The number of partitions created after a shuffle operation depends on the spark.sql.shuffle.partitions configuration.
+The default value is 200 partitions. If you want to increase or decrease the number of partitions, you can set this parameter explicitly.
+Example:
+spark.conf.set("spark.sql.shuffle.partitions", 300)  # Adjust the number of shuffle partitions
+df.groupBy("column").agg({"value": "sum"})
+In the above case, after the groupBy() operation, Spark will create 300 partitions for the shuffle instead of the default 200.
+
+
+Summary of Answers:
+One application is created for each spark-submit.
+One job is created for each action (e.g., count(), show(), save()).
+A stage is a step in a Spark job, and a task is the smallest unit of work in a stage that operates on a partition of data.
+The number of stages depends on the wide transformations that require shuffling (e.g., groupBy(), join()).
+The number of tasks depends on the number of partitions in the dataset.
+By default, 200 partitions are created after a wide transformation (e.g., groupBy()).
+
+
+What was the worst problem which you have faced in big data domain?
+Sample Answer:
+Problem:
+One of the most challenging issues I faced was with data skewness in a Spark-based ETL pipeline processing large datasets. We had a job that was ingesting terabytes of log data every day, aggregating it based on user activity for reporting. The problem arose during a groupBy() transformation on the user ID, as the data was very skewed — certain user IDs had an inordinate amount of data, while many had very little. This led to data imbalance during shuffling, where a few tasks had a huge amount of work, resulting in straggler tasks and significantly delayed job completion times (up to several hours).
+
+Steps Taken:
+The first thing I did was analyze the Spark UI to identify where the bottlenecks were occurring. I saw that certain tasks were taking much longer than others due to the uneven distribution of data across the partitions. This was leading to a long tail in the job execution time, even though the rest of the tasks were finishing much faster.
+
+After pinpointing the skew, I implemented the following solutions:
+
+Salting the keys: I added a random number to the user ID to evenly distribute the data into multiple partitions. This helped prevent any one partition from being overloaded.
+Broadcast join optimization: For some smaller datasets that were being joined with the large skewed dataset, I used broadcast joins to reduce the need for shuffling.
+Adjusting partition sizes: I increased the number of partitions from the default of 200 to a higher value (500) using spark.sql.shuffle.partitions. This distributed the workload more evenly and helped reduce task stragglers.
+Data repartitioning: Before the groupBy() operation, I repartitioned the data based on some other key that had a more even distribution, which helped further balance the workload.
+Outcome:
+After applying these optimizations, I was able to reduce the job execution time from several hours to under 30 minutes. The job became more stable, with fewer straggler tasks and better resource utilization. This experience taught me a lot about data partitioning, spark tuning, and performance optimization, especially in the context of large-scale distributed systems.
+
+Learning:
+The problem of data skewness and how to handle it in a distributed system was a major learning point. I now always think about data distribution and partitioning strategies upfront when designing data pipelines, especially in Spark. It also gave me a better appreciation for how cluster configuration and resource allocation play a key role in optimizing performance.
+
+Learning and Growth: Always end by mentioning what you learned from the problem and how it helped you improve as a data engineer or big data professional.
+
+
+
+What is SCD , Type-1 and Type-2 ?
+Slowly Changing Dimension (SCD) refers to a concept in data warehousing where dimensions (e.g., attributes of customers, products, etc.) change over time, but not frequently. The challenge lies in tracking and handling those changes in a way that the data warehouse remains consistent and historical data is preserved.
+
+In a data warehousing context, dimensions often represent entities (like customers or products), and their attributes might change over time. For instance, a customer’s address might change, or the price of a product may be updated.
+
+Since these changes aren’t frequent, they are called "slowly changing." However, when they do occur, you need to determine how to handle these changes so that the warehouse maintains historical accuracy.
+
+Types of Slowly Changing Dimensions (SCD)
+There are primarily three types of SCDs, but you specifically asked about Type-1 and Type-2:
+
+1. SCD Type-1 (Overwrite the Old Value):
+Definition: In Type-1 SCD, when an attribute of a dimension changes (like a customer's address), the new value simply overwrites the old value. No history is kept.
+
+Example:
+
+If a customer’s address changes, only the latest address is retained in the table. The previous address is lost.
+Use Case: Type-1 is used when you don’t need to retain historical information and just want to track the latest state of the data.
+
+Advantages:
+
+Simple to implement.
+Easy to query, since the table contains only the latest values.
+Disadvantages:
+
+Historical data is lost. If you need to know the past address of the customer, it is not available.
+2. SCD Type-2 (Create New Record for Each Change):
+Definition: In Type-2 SCD, every time an attribute of a dimension changes, a new record is created with the new value, while the old record is preserved but marked as "expired" or "inactive." This way, you can track historical changes.
+
+Example:
+
+If a customer’s address changes, the old address is kept with a validity date range, and the new address is inserted as a new record. For instance, the customer’s ID would remain the same, but the address and timestamp of the record would reflect the updated information.
+Use Case: Type-2 is used when you need to preserve historical records (e.g., tracking all changes in customer addresses over time).
+
+Advantages:
+
+Historical data is preserved.
+You can track and query the history of changes to the dimension data.
+Disadvantages:
+
+Increased storage requirements, as every change creates a new record.
+Querying becomes more complex, especially if you need to filter based on the current value.
+3. SCD Type-3 (Store Current and Previous Values):
+Definition: Type-3 SCD stores both the current and the previous values of a dimension attribute. Instead of keeping an entire history, it only tracks the most recent change.
+
+Example:
+
+If a customer’s address changes, the table would store both the current address and the previous address in separate columns (e.g., current_address and previous_address).
+Use Case: Type-3 is used when you need to track only the most recent changes, but not a full history.
+
+Advantages:
+
+Only a limited amount of history is kept.
+Querying is simpler than Type-2 (since there’s no need to handle multiple records).
+Disadvantages:
+
+Limited history (only the most recent and previous values).
+Not suitable for situations where you need to track more historical changes.
+
+
+
+Challenges of implementing SCD in Big Data?
+Implementing Slowly Changing Dimensions (SCD), especially Type-2, in a Big Data environment can introduce several challenges. Here are the key challenges and considerations:
+
+1. Handling Large Data Volumes
+Problem: Big Data environments (e.g., Spark, Hadoop) often work with massive volumes of data. Implementing SCDs, particularly Type-2 (which requires inserting new records with a range of valid dates), can result in huge storage needs and long processing times.
+Solution: You need to design efficient data partitioning and compression strategies to manage the size of the data. For instance, partitioning by date or event ID can help with performance.
+2. Complexity of Data Joins and Lookups
+Problem: In Big Data systems, data may be spread across multiple systems or distributed across nodes, making it harder to track changes or perform join operations (e.g., matching records to determine if an SCD update is needed).
+Solution: You may need to use broadcast joins or window functions (e.g., ROW_NUMBER(), LEAD(), LAG()) to efficiently compare new and old values in large datasets.
+3. Ingestion Performance and Real-Time Processing
+Problem: For real-time or streaming data processing (e.g., using Kafka or Spark Streaming), processing and updating SCDs can be particularly challenging due to the high frequency of data updates. Ensuring that updates do not negatively impact system performance is critical.
+Solution: In such cases, micro-batch processing or event-driven architecture (using change data capture or CDC tools) can help efficiently process data without overloading the system.
+4. Data Quality and Integrity
+Problem: Ensuring data quality and integrity when implementing SCDs can be difficult, especially in a distributed environment where data might arrive out of order, be missing, or contain errors.
+Solution: Implementing robust data validation and deduplication processes, and using tools like Apache Hudi or Delta Lake, which offer ACID transactions and versioned data storage, can help maintain consistency and correctness.
+5. Handling Historical Data Storage
+Problem: Storing multiple versions of records (as in SCD Type-2) in a distributed system can be expensive in terms of storage. With every update, an entirely new record is added, leading to data bloat.
+Solution: Leveraging delta storage formats (e.g., Parquet, ORC, Delta Lake) that support incremental updates, versioning, and time travel can help manage historical records efficiently. For example, Delta Lake allows you to implement time-based queries efficiently, without needing to store excessive copies of data.
+6. Data Skew
+Problem: When implementing SCD in Big Data, especially with large-scale groupBy() or join() operations, data skew can occur when some keys have disproportionately more data than others, causing certain tasks to take much longer than others.
+Solution: To mitigate data skew, techniques like salting (adding random prefixes or suffixes to skewed keys) can help balance the load across partitions. Additionally, broadcast joins can be used for small tables to prevent unnecessary shuffling.
+7. Consistency and Concurrency
+Problem: In multi-node Big Data systems, maintaining consistency (ensuring the latest updates are reflected across all nodes) and concurrency (handling simultaneous writes/updates) can be difficult, especially when updating multiple records for a single entity (in Type-2 SCD).
+Solution: Solutions like ACID-compliant storage formats (e.g., Delta Lake) or CDC tools (e.g., Debezium) can help ensure consistency during concurrent operations.
+
+
+
+
+What is the cluster size that you are using ?
+Data Size
+
+"In my current/previous role, we operate a cluster with 50 worker nodes and 4 master nodes running on a cloud-based platform like AWS EMR or Azure HDInsight. Each worker node is configured with 32 vCPUs and 256 GB of RAM to handle large-scale data processing. The cluster is designed to scale dynamically depending on the workload, and we leverage auto-scaling to manage the number of nodes based on the volume of incoming data. In our setup, the cluster is configured for Spark on YARN for resource management, which provides flexibility in scheduling and managing large distributed jobs efficiently."
+
+"The datasets we work with range from hundreds of terabytes to several petabytes of data. We handle a mix of batch processing for historical data and streaming data for real-time processing. Our primary storage system is HDFS and Amazon S3, which stores both structured data (in formats like Parquet and ORC) and unstructured data (like logs and images). The data is ingested at a rate of about 50 TB per day from various sources, including IoT devices, transactional databases, and external APIs. Additionally, we have used Apache Kafka for streaming data pipelines to process real-time event data, with an average ingestion rate of 10-20 GB per minute."
+
+
+====================================================
+
+
+ 
+3) scala.
+- Types of variables in scala ( mutable /immutable )  difference between var and value
+In Scala, variables can either be mutable or immutable. These types of variables differ in how their values can be modified once they are assigned.
+Immutable Variables (val):
+Definition: A variable declared with val is immutable. Once it is assigned a value, it cannot be reassigned or changed.
+Example:
+scala
+Copy code
+val x = 10
+// x = 20  // This will result in a compilation error because x is immutable
+Use case: Prefer using val wherever possible, as immutability leads to safer, less error-prone code. This is especially beneficial in distributed systems like Apache Spark where immutable data structures ensure consistent results across parallel tasks.
+Mutable Variables (var):
+Definition: A variable declared with var is mutable. Its value can be reassigned at any point.
+Example:
+
+var y = 5
+y = 10  // This is valid, as y is mutable
+Use case: You should use var sparingly because mutable state can lead to side effects and make your code harder to reason about, particularly in multi-threaded environments like Spark.
+Difference Between var and val:
+val: Immutable reference. You cannot reassign the reference or value, ensuring safety in concurrent environments.
+var: Mutable reference. The reference and value can both be changed.
+In Summary:
+val is used for immutability (preferred for thread safety and functional programming).
+var is used for mutable variables, but should be avoided unless absolutely necessary.
+
+
+- Mention how Scala is different from Java
+Scala is often compared to Java because it runs on the JVM (Java Virtual Machine) and is fully interoperable with Java, but it introduces several advanced features to make it a more expressive and concise language for modern applications.
+
+Key Differences:
+Conciseness and Syntax:
+
+Scala is more concise than Java due to features like type inference, which reduces boilerplate code.
+
+Example: In Java, you would need to specify types explicitly for every variable, but Scala can infer them automatically.
+
+// Java
+int a = 10;
+
+// Scala
+val a = 10 // Scala infers that 'a' is of type Int
+Immutability by Default:
+
+Scala encourages immutability by default with the val keyword, while in Java, mutability is more common unless explicitly designed otherwise.
+Functional Programming:
+
+Scala is a functional programming language in addition to being an object-oriented language. It has first-class functions, higher-order functions, and a rich immutable collections library. Java’s functional capabilities (e.g., lambdas) were only added in Java 8.
+Example:
+val numbers = List(1, 2, 3)
+val doubled = numbers.map(_ * 2)  // Functional style: applying a function to each element
+Type Inference:
+
+Scala has advanced type inference. You don’t always need to explicitly specify types, as Scala can infer types from the context.
+Example: Scala can infer the type of a variable, whereas Java requires explicit declaration.
+val x = 10 // Scala infers that 'x' is of type Int
+Pattern Matching:
+Scala has powerful pattern matching which is far more flexible and concise than Java’s traditional switch statement.
+Example:
+
+val fruit = "apple"
+fruit match {
+  case "apple" => println("It's an apple!")
+  case "banana" => println("It's a banana!")
+  case _ => println("Unknown fruit!")
+}
+Traits and Mixins:
+
+Scala has traits, which are similar to Java interfaces but can also contain concrete methods. Traits provide a way to compose classes from reusable components.
+Java doesn't have direct equivalents for mixins or traits, though Java 8 interfaces with default methods are somewhat similar.
+
+Concurrency with Akka:
+While Java provides multithreading using Thread or ExecutorService, Scala has libraries like Akka that provide actor-based concurrency which is easier to scale for distributed systems.
+Akka allows for building highly concurrent, fault-tolerant applications with actors as the unit of concurrency, reducing the complexities of multi-threading.
+
+Collections:
+Scala’s immutable collections (like List, Map, Set) are more powerful and expressive compared to Java’s built-in collections. In Scala, collections are by default immutable, promoting functional programming principles.
+
+Interoperability:
+Scala is fully interoperable with Java. You can call Java libraries and vice versa, and Scala's bytecode is compatible with Java's JVM.
+Summary:
+Scala provides more concise syntax, advanced functional programming features, and immutability by default.
+Java is more verbose and traditionally more object-oriented, but Scala’s features make it more suitable for modern, distributed data processing (especially in frameworks like Spark
+
+
+- What is Option in scala
+Option in Scala: Option provides a safe way to handle potential nulls or missing values, reducing the risk of null pointer exceptions and improving code robustness.
+
+In Scala, Option is a container type used to represent a value that may or may not be present. It helps avoid null pointer exceptions by enforcing the handling of missing or undefined values.
+
+Option is a sealed trait with two concrete subtypes:
+Some[T]: Represents a value of type T.
+None: Represents the absence of a value.
+Why Use Option?
+It is used to explicitly handle cases where a value might be missing instead of using null, making the code more robust and preventing null pointer exceptions.
+It forces developers to handle the "absence" of values explicitly, thus improving safety and readability.
+Example:
+val maybeName: Option[String] = Some("Alice")  // Some value
+val noName: Option[String] = None             // No value
+
+// Safe extraction using pattern matching
+maybeName match {
+  case Some(name) => println(s"Name is $name")
+  case None => println("No name found")
+}
+
+// or using map/flatMap
+maybeName.map(name => println(s"Name is $name")).getOrElse(println("No name found"))
+Common Operations on Option:
+map: Apply a function if the value is Some.
+
+val nameLength = maybeName.map(_.length)  // Returns Some(5) if the name is "Alice"
+getOrElse: Provide a default value if the Option is None.
+
+val name = maybeName.getOrElse("Unknown")  // If maybeName is None, it returns "Unknown"
+flatMap: Similar to map but used when the transformation function returns an Option itself.
+
+val maybeAge = maybeName.flatMap(name => Some(name.length))  // Returns Some(5) for "Alice"
+Summary:
+Option provides a safer alternative to null and allows you to explicitly handle missing values.
+It forces you to deal with possible absences of data through methods like map, getOrElse, and flatMap, reducing runtime errors.
+
+
+
+Explain the difference between the terms Nil, Null, None and Nothing.
+	- Null, null, Nil, Nothing, None, and Unit are all used to represent empty values in Scala.   
+	- Null refers to the absence of data, and its type is Null with a capital N.  
+	- Null is considered to be a list that contains zero items. Essentially, it indicates the end of the list.  
+	- Nothing is also a trait without instances.   
+	- None represents a sensible return value. 
+	- Unit is the return type for functions that return no value
+
+In Scala, understanding the differences between Nil, Null, None, Nothing, and Unit is crucial for writing functional and type-safe code, especially when dealing with empty values or absent data in the language. Here's an in-depth explanation of each term and how they are used in Scala:
+
+1. Nil (Related to Lists)
+Definition: Nil is an object that represents an empty list in Scala. It is part of the List trait and is used specifically to indicate the end of a list. It is the empty case for a non-parameterized List.
+
+Type: Nil is a singleton object of type List[Nothing]. It is the base case for lists in Scala.
+
+Usage:
+val emptyList: List[Int] = Nil
+val anotherList: List[Int] = 1 :: Nil  // List with a single element
+In this example, Nil is used to represent an empty list, and :: is a case class that is used to prepend an element to a list.
+
+Nil can also be used in recursive functions where the base case is an empty list:
+def sum(lst: List[Int]): Int = lst match {
+  case Nil => 0 // Base case: empty list
+  case head :: tail => head + sum(tail) // Recursive case
+}
+
+2. Null (Type Null)
+Definition: Null in Scala is a type that represents null values (like null in Java), and it can be assigned to any reference type. Null is the type of the special value null, which signifies the absence of a reference to an object.
+
+Type: Null is a type that only has null as its single instance.
+
+Usage:
+
+val str: String = null  // A reference type can be assigned null
+val obj: Any = null     // Can be assigned to any type (reference type)
+However, it's important to note that Null can only be assigned to reference types (e.g., String, List, Option), and cannot be used with value types (e.g., Int, Boolean).
+
+Difference from Java: In Java, null can be assigned to any type (reference or primitive). In Scala, Null is more restricted and can only be used with reference types.
+
+3. None (Part of Option)
+Definition: None is used to represent the absence of a value within an Option container. Option is a type that can either be Some(value) or None. None is used to indicate that a value is missing, and it is a sensible, explicit way of representing no result or no value.
+
+Type: None is a case object of the Option type, specifically representing an empty option.
+
+Usage:
+
+val emptyOption: Option[Int] = None  // No value present in Option
+val someValue: Option[Int] = Some(42)  // Some value present in Option
+None is typically used in functional programming to avoid dealing with null, ensuring safer handling of missing or optional values.
+None is particularly useful in for-comprehensions, where we can chain operations on Option values.
+Example:
+
+val result = for {
+  x <- Some(10)
+  y <- Some(20)
+} yield x + y  // result will be Some(30)
+
+val noResult = for {
+  x <- Some(10)
+  y <- None  // This will short-circuit the computation
+} yield x + y  // noResult will be None
+
+4. Nothing (The Bottom Type)
+Definition: Nothing is a special bottom type in Scala, meaning that it is the subtype of all types. This means that every type in Scala (except Null) can be a supertype of Nothing.
+
+Type: Nothing is not an actual value but a type. It is used to indicate an impossibility — a type that will never produce any value. It's often used to denote the return type of functions that never return (like functions that throw exceptions).
+
+Usage:
+
+def fail(): Nothing = throw new Exception("Something went wrong!")
+Nothing is useful when you need to signal that a function doesn't return any meaningful value (e.g., throwing an exception).
+Nothing is also used in Option, List, and other collections to represent an empty case. For example, Nil is of type List[Nothing], which means it can represent a list of any type.
+
+5. Unit (The "Void" Type)
+Definition: Unit is a type that represents no meaningful value and is similar to void in Java or other languages. It is used as the return type for functions that don’t return any result, typically when the side effect is more important than the result (e.g., printing to the console).
+
+Type: Unit has only one value, which is (), a unit literal.
+
+Usage:
+
+def printMessage(message: String): Unit = {
+  println(message)
+}
+
+// This function returns Unit, because it doesn't produce a meaningful value.
+printMessage("Hello, Scala!")
+Unit is used as the return type of functions that don't need to return anything.
+A function returning Unit is often used for performing side effects (e.g., writing to a file, printing, etc.).
+Summary of Differences:
+
+Term	Definition	                                           Type	                Usage
+Nil	Represents an empty list	                           List[Nothing]	Used to signify the end of a list or an empty list.
+Null	Represents the absence of data or a null reference	     Null	        Used as a placeholder for empty or uninitialized references.
+None	Represents the absence of a value in Option	           Option[Nothing]	Used to indicate the absence of a value in an Option.
+Nothing	A bottom type that represents an impossible value or no result	Nothing	         Used for functions that never return (e.g., throw exceptions).
+Unit	Represents no meaningful return value	                            Unit	Used when a function doesn't return any result (similar to void).
+
+Conclusion
+Nil represents an empty list (List[Nothing]).
+Null represents the absence of a reference (assigned to reference types).
+None is used in Option to represent the absence of a value in a type-safe manner.
+Nothing is a special type representing an impossible or unreturnable result (often used in functions that throw exceptions).
+Unit represents functions that don't return any value and is akin to void in Java.
+These distinctions are particularly important in functional programming and help you write more predictable and robust code by explicitly handling cases where values might be missing, absent, or undefined.
+
+
+
+Explain the different access modifiers that are available in Scala.
+	- Private , Protected , Public member
+
+In Scala, access modifiers define the visibility and accessibility of classes, objects, methods, and members. They provide mechanisms to control encapsulation and data hiding, ensuring that components of your application are used correctly. Scala provides the following access modifiers:
+
+private
+protected
+public (default)
+Let’s dive deeper into each one:
+
+1. private (Least Accessible)
+Definition: The private access modifier restricts the access of members (fields, methods, etc.) to only within the class or object they are defined in.
+
+Scope: Members declared as private can only be accessed within the same class or object. They are not accessible from outside the class, even by subclasses.
+
+Usage:
+
+scala
+Copy code
+class MyClass {
+  private val secret = "This is private"
+  
+  def revealSecret(): String = secret
+}
+
+val myObj = new MyClass
+println(myObj.revealSecret())  // Accessing private through a public method
+// println(myObj.secret)  // This will give a compilation error since `secret` is private
+Important: private is the most restrictive modifier and is typically used for encapsulating internal details that should not be exposed or accessed directly by other classes.
+
+2. protected (Accessible in Subclasses)
+Definition: The protected modifier allows members to be accessible within the same class and in subclasses (including subclasses defined in other packages).
+
+Scope: A member marked as protected can be accessed by the class itself and any subclass (in the same or different package). However, it is not accessible from outside the class or subclass.
+
+Usage:
+
+scala
+Copy code
+class Animal {
+  protected val sound = "Roar"
+}
+
+class Lion extends Animal {
+  def makeSound(): String = sound  // 'sound' is accessible because it's protected
+}
+
+val lion = new Lion
+println(lion.makeSound())  // "Roar"
+// println(lion.sound)  // This will give a compilation error because 'sound' is protected
+Important: The protected modifier is often used in inheritance hierarchies, where the superclass allows subclasses to access certain fields or methods while preventing external access.
+
+3. public (Default Accessibility)
+Definition: public is the default access level in Scala if no modifier is specified. Members with public access are accessible from anywhere — whether inside the class, subclasses, or from outside the class entirely.
+
+Scope: Public members can be accessed by any class or object that has visibility of the class they are part of.
+
+Usage:
+
+scala
+Copy code
+class Car {
+  val brand = "Toyota"  // Public by default
+  
+  def drive(): String = "Driving the car!"
+}
+
+val myCar = new Car
+println(myCar.brand)  // Accessible from anywhere
+println(myCar.drive())  // Accessible from anywhere
+Important: If no access modifier is provided, Scala assumes members are public. It is the most permissive modifier and is the default for methods, fields, and classes.
+
+4. Package-Private (private[package])
+Definition: Scala allows you to restrict access to members within a specific package using the private[package] modifier. This means the member is private within the given package and accessible to any class or object within the same package, but not accessible from outside the package.
+
+Scope: Members are accessible to all classes and objects within the same package (or subpackages), but not accessible from outside the package.
+
+Usage:
+
+scala
+Copy code
+package mypackage {
+  class Car {
+    private[mypackage] val brand = "Toyota"  // Visible within the package
+  }
+
+  object CarTest {
+    def test(): Unit = {
+      val car = new Car
+      println(car.brand)  // Accessible because it's within the same package
+    }
+  }
+}
+
+package anotherpackage {
+  class AnotherClass {
+    def test(): Unit = {
+      val car = new mypackage.Car
+      // println(car.brand)  // This will give a compilation error, as 'brand' is private to 'mypackage'
+    }
+  }
+}
+Important: This modifier is useful when you want to expose a member to classes or objects in the same package but hide it from other packages. It’s more fine-grained than the simple private modifier.
+
+5. Private to the Class (private[this])
+Definition: private[this] is a more restrictive version of private. Members declared as private[this] can only be accessed from the instance they belong to. Even subclasses cannot access members marked with private[this].
+
+Scope: The member is accessible only within the current instance of the class. It is not accessible to subclasses or other instances of the class.
+
+Usage:
+
+scala
+Copy code
+class MyClass {
+  private[this] val secret = "This is a secret"
+  
+  def revealSecret(): String = secret  // Accessing within the same instance
+}
+
+val myObj = new MyClass
+// println(myObj.secret)  // This will give a compilation error because 'secret' is private to this instance
+Important: private[this] is useful when you want to restrict access to a member only within the instance of the object where it is defined, ensuring strict encapsulation.
+
+Summary of Access Modifiers in Scala
+Access Modifier	Description	Scope of Accessibility
+private	Restricts access to the current class or object.	Only accessible within the same class/object.
+protected	Allows access in subclasses and the current class.	Accessible within the class and subclasses.
+public (default)	Members are accessible from anywhere (default if no modifier specified).	Accessible from anywhere (no restrictions).
+private[package]	Restricts access to within the specified package.	Accessible within the given package only.
+private[this]	Restricts access to the current instance only.	Accessible only within the current instance.
+Key Takeaways:
+Use private to hide implementation details within a class.
+Use protected for members that should be accessible to subclasses but not to the external world.
+public is the default and most permissive access level, granting wide visibility.
+private[package] allows members to be accessed within a specific package, providing more granular control than private.
+private[this] is the most restrictive access level, ensuring that a member is accessible only within its specific instance.
+These access modifiers help ensure encapsulation, allowing developers to control how members of a class or object are accessed and modified, which is a cornerstone of robust, maintainable, and secure code.
+
+
+4) basic understanding of cicd and unit testing
+1. CI/CD in AWS
+In your project, if you are using AWS CI/CD, you're likely working with a combination of services that automate the build, test, and deployment pipelines. Below are some key AWS services commonly used in a CI/CD pipeline:
+
+AWS CodePipeline: This is the core service for continuous integration and continuous delivery on AWS. It helps automate the build, test, and deployment stages of your software release process.
+
+Stages: You define various stages in CodePipeline, such as Source, Build, Test, and Deploy.
+CodePipeline integrates with other services like CodeBuild, CodeDeploy, AWS Lambda, etc.
+Example:
+
+Source: Pull source code from a repository (like GitHub, AWS CodeCommit, or S3).
+Build: Trigger an AWS CodeBuild job to compile the code and run unit tests.
+Deploy: Deploy the build to EC2, Lambda, or container services (like ECS).
+AWS Lambda: You can automate certain parts of the CI/CD pipeline using AWS Lambda functions. For example, Lambda can be used for event-driven tasks like triggering a test suite, or processing logs in real-time.
+
+In CodePipeline, Lambda functions can be invoked after each stage to perform custom actions, such as notifications or additional verification tasks.
+AWS Step Functions: This service is used to coordinate multiple AWS services into serverless workflows. It enables you to build more complex workflows in your CI/CD pipeline.
+
+For example, if you want to process data in multiple steps (such as transforming data in S3, then saving results in DynamoDB, and generating reports), you can orchestrate this using Step Functions.
+AWS DynamoDB: It is a NoSQL database that is often used for storing state information, application logs, or metadata in a CI/CD pipeline. For example, DynamoDB can store status updates about the pipeline process, such as tracking the build status or deployment state.
+
+Amazon S3: S3 is frequently used for storing build artifacts, such as compiled code, configuration files, and logs. It can serve as the source for CodePipeline or as a staging area for deployment.
+
+For example, you may store deployment artifacts like zipped files or Docker images in S3 and use those as inputs to the next stage of your pipeline.
+AWS Glue: If your application involves data transformation (ETL - Extract, Transform, Load), AWS Glue can be part of your pipeline to manage the data preparation process before analysis or reporting.
+
+Glue jobs are used to extract data from S3, perform transformations, and load the data into databases like Amazon Redshift or other data warehouses.
+Amazon Redshift: If your application includes data warehousing, Redshift can be part of your pipeline to load processed data (from Glue or direct data pipelines) into a data warehouse for analytical querying.
+
+End-to-End Example:
+
+CodeCommit or GitHub triggers a CodePipeline.
+The code is compiled and tested in AWS CodeBuild.
+If tests pass, the built artifact is stored in S3 and deployed to AWS Lambda or an EC2 instance.
+Use Step Functions to orchestrate any additional steps (e.g., data processing, notifications).
+AWS Glue processes any incoming data into a format ready for analysis and loads it into Redshift.
+DynamoDB or S3 stores logs, metrics, or other tracking data about the CI/CD pipeline process.
+
+
+- JUNIT Testing 
+Although JUnit is often associated with Java, it is also compatible with Scala. In Scala projects, JUnit can be used with the ScalaTest framework for testing.
+
+ScalaTest integrates well with JUnit, and many assertions can be written using JUnit methods or ScalaTest's DSL.
+Here's an example of how to set up JUnit-style testing in a Scala project:
+
+scala
+Copy code
+import org.junit.Assert._
+import org.junit.Test
+
+class MyTest {
+  @Test
+  def testAdd(): Unit = {
+    assertEquals("Sum should be correct", 5, 2 + 3)
+  }
+
+  @Test
+  def testString(): Unit = {
+    assertTrue("String should not be empty", "Hello".nonEmpty)
+  }
+}
+
+- What all assertions do you know
+Common Assertions in JUnit (Scala):
+
+assertEquals(expected, actual): Checks that two values are equal.
+assertNotEquals(unexpected, actual): Checks that two values are not equal.
+assertTrue(condition): Checks if the condition is true.
+assertFalse(condition): Checks if the condition is false.
+assertNull(object): Checks if an object is null.
+assertNotNull(object): Checks if an object is not null.
+assertSame(expected, actual): Checks if two references point to the same object.
+
+- Do you know about mockito 
+Mockito is a popular mocking framework used to create mock objects for unit tests. This is especially helpful in isolating the component under test (for example, by mocking dependencies such as database calls, APIs, etc.).
+
+Mocking allows you to simulate complex objects and behaviors without calling the actual implementation. It makes your tests more isolated and efficient.
+
+In Scala, you can use Mockito to mock out dependencies, verify method calls, and set up behavior for tests.
+
+Mockito Example in Scala:
+
+scala
+Copy code
+import org.junit.Test
+import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers._
+import org.mockito.Mockito
+
+class MyServiceTest {
+
+  // Mocked dependencies
+  val mockRepository: MyRepository = mock(classOf[MyRepository])
+  val service = new MyService(mockRepository)
+
+  @Test
+  def testGetData(): Unit = {
+    // Setup behavior for mock
+    when(mockRepository.getData(anyString())).thenReturn("Mocked Data")
+
+    // Call method under test
+    val result = service.getData("test")
+
+    // Verify the result
+    assertEquals("Mocked Data", result)
+
+    // Verify interaction with the mock
+    verify(mockRepository).getData("test")
+  }
+}
+mock(): Creates a mock object.
+when(...).thenReturn(...): Stubs the behavior of the mock to return a specified value when called.
+verify(...): Verifies that a method on the mock object was called with specified arguments.
+AWS Services You May Work With in a Data Engineering Context:
+AWS CodePipeline: As the central service for orchestrating a CI/CD pipeline, it integrates with other AWS services to automate code deployment and testing.
+AWS Lambda: You can run serverless functions in response to events such as triggering tests, handling data, or invoking other AWS services.
+AWS Step Functions: Used to coordinate tasks that require multiple steps, such as invoking Lambda functions or orchestrating S3 and Glue tasks in data processing pipelines.
+AWS Glue: Data transformation (ETL) service that can prepare data for analytics by integrating with services like Amazon S3, Redshift, and DynamoDB.
+Amazon Redshift: A fast, scalable data warehouse that allows you to analyze large datasets.
+DynamoDB: A highly scalable NoSQL database, which could be used to store metadata or state information in a pipeline.
+Amazon S3: Object storage that can be used for storing data, artifacts, logs, and build outputs.
+
+Do you have knowledge on AWS ---> Good to have - AWS
+
+
+============================== TOP 10 best interview quetions ===================
+0) Project and tech stack 
+Need to think by own
+
+1) Explain partitioning and Bucketing
+1. Partitioning
+Partitioning is the process of dividing a dataset into smaller, more manageable subsets called partitions. In distributed data processing systems like Hive, Spark, or Hadoop, partitioning enables data to be stored in different directories, and each partition can be processed separately in parallel, increasing performance.
+
+Key Characteristics of Partitioning:
+Logical Division: Partitioning typically happens based on a column (or multiple columns) in your dataset. For example, you might partition a sales dataset by date, so that each partition contains data for a specific date or date range.
+
+Physical Storage: Each partition corresponds to a physical directory on disk. For instance, in Hive, partitioned tables are stored in directories that represent partition columns.
+
+Efficient Queries: When queries filter on partition columns, only the relevant partitions are read, leading to reduced data scan and faster query performance. This is known as partition pruning.
+
+Example:
+Consider a sales table with data for multiple years. You might partition it by year:
+
+/sales/year=2020/
+/sales/year=2021/
+/sales/year=2022/
+When querying data for 2021, only the partition for year=2021 will be read, reducing the amount of data scanned.
+
+Types of Partitioning:
+Static Partitioning: Data is manually partitioned based on some key (e.g., by date, region, etc.).
+Dynamic Partitioning: Partitioning is done automatically based on values in the incoming data. For example, a partition can be created dynamically for each new date as data is ingested into the system.
+Advantages of Partitioning:
+Faster queries through partition pruning (only relevant partitions are read).
+Better parallelism and resource utilization since partitions can be processed in parallel.
+Easier data management for large datasets, especially when dealing with time-series data.
+Disadvantages:
+Choosing the wrong partitioning key can lead to skewed data or inefficiency. For example, if data is evenly distributed across the partitions, but one partition ends up with too much data, it can slow down query performance (known as a hot partition).
+2. Bucketing
+Bucketing is another technique used to physically divide data into a set number of buckets or files. Unlike partitioning, which splits data based on column values, bucketing divides the data into a fixed number of files based on a hash function.
+
+Key Characteristics of Bucketing:
+Hash-based Division: Data is distributed into fixed-size buckets using a hash function applied to a column (or set of columns). For example, if you bucket data by customer_id, the hash function might evenly distribute the rows across 10 buckets based on the customer ID.
+
+Fixed Number of Buckets: The number of buckets is predefined (e.g., you specify 10 buckets). Each bucket is stored as a file on disk.
+
+Efficient Joins: Bucketing is especially useful for joins. If two tables are bucketed on the same column, a join between these tables can be more efficient because both datasets are already organized into similar structures.
+
+Example:
+Consider a user table where each user has a unique user_id. If we bucket by user_id with 10 buckets, the data will be divided as follows:
+
+Bucket 1: Hash(user_id) % 10 == 0
+Bucket 2: Hash(user_id) % 10 == 1
+...
+Bucket 10: Hash(user_id) % 10 == 9
+This ensures that the data is spread evenly across 10 files (buckets), which can improve query performance, particularly for aggregations and joins.
+
+Advantages of Bucketing:
+Efficient Joins: If both tables involved in a join are bucketed on the same column, Spark or Hive can perform bucketed joins, which avoids the need for shuffling and makes the join operation much faster.
+Even Distribution: Bucketing helps in distributing data evenly across a fixed number of files or partitions, which improves parallel processing and resource utilization.
+Better Sorting: Since data within each bucket is often sorted (especially in Hive), it can lead to faster query performance when performing operations like range queries or aggregations.
+Disadvantages:
+Fixed Buckets: Unlike partitioning, where partitions can grow and shrink based on the data, bucketing requires you to pre-define the number of buckets. Once data is bucketed, it is not easy to change the number of buckets without re-bucketing the data.
+Hash Collisions: The hashing algorithm may lead to uneven distribution of data if the distribution of the column values is skewed. For example, if you bucket by a column with very few unique values, some buckets may be disproportionately large, which can lead to inefficient processing.
+Partitioning vs. Bucketing: Key Differences
+Feature	Partitioning	Bucketing
+Division Criteria	Based on specific column values (e.g., year, region).	Based on a hash function applied to a column.
+Physical Storage	Data is stored in directories corresponding to partition values (e.g., /year=2020/).	Data is stored in fixed-sized files (buckets).
+Query Performance	Speeds up queries that filter on partition columns (partition pruning).	Speeds up joins and aggregation queries.
+Data Organization	Partitions are usually organized by specific values (e.g., date, region).	Buckets are organized by hash values.
+Flexibility	Can dynamically create new partitions as data grows (especially with dynamic partitioning).	The number of buckets must be pre-defined.
+Use Case	Ideal for queries filtering on specific columns (e.g., time-based queries).	Ideal for large-scale joins and aggregations, especially when data is evenly distributed.
+Use Cases and Best Practices:
+Partitioning:
+
+Use when you have time-series data (e.g., logs, transactional data) or any data that is naturally grouped by a specific column (like region, date, or category).
+Partitioning is best when you expect frequent queries that filter on those partitioned columns (e.g., "SELECT * FROM sales WHERE year = 2020").
+Bucketing:
+
+Use when you need to optimize joins between large datasets. For example, if you're frequently joining two large tables on customer_id, bucketing both tables by customer_id will help improve the performance of those joins.
+Bucketing is also useful when you need to optimize sorting within large datasets, as data within each bucket is typically sorted.
+Example Scenario in Spark/Hive
+Consider a sales dataset with millions of rows. You might:
+
+Partition the data by year or month to speed up queries that filter based on those time ranges (e.g., "select * from sales where year = 2023").
+Bucket the data by customer_id if you plan on frequently joining this sales data with a customer table, as bucketing ensures that both tables are divided into buckets based on the customer ID, optimizing the join operation.
+In Hive, you could use a combination of partitioning and bucketing:
+
+sql
+Copy code
+CREATE TABLE sales (
+  transaction_id INT,
+  customer_id INT,
+  amount DECIMAL(10, 2),
+  transaction_date STRING
+)
+PARTITIONED BY (year STRING, month STRING)
+CLUSTERED BY (customer_id) INTO 10 BUCKETS;
+In this example:
+
+The table is partitioned by year and month to speed up queries that filter on these columns.
+The data is bucketed by customer_id into 10 buckets for more efficient joins with other customer-related tables.
+Conclusion
+Partitioning is about dividing data into separate physical storage units (directories) based on a key column, which makes it efficient for queries that filter by that column.
+Bucketing divides data into fixed-sized units (buckets) based on a hash of a column, which is helpful for optimized joins and certain types of aggregations.
+
+2) What is the default partition algorithm used in MR and SPark
+	--> Hash Partition algorith formual 
+	--> Hash of the key mod of no of reducer  --> For MR 
+	-->	Hash of the key mod of no of partitions  --> for spark 
+	-->	Hash of the key mod of no of bucket --> for Hive buckets
+	
+3) Hive bucket internal formula ( Answer for 2nd and 3rd is corret)
+	-->	Hash of the key mod of no of bucket --> for Hive buckets 
+
+2) Default Partitioning Algorithm in MapReduce and Spark
+Both MapReduce (MR) and Spark use hash-based partitioning by default to distribute data across different processing units (reducers or partitions). This ensures that the data is evenly distributed across the available processing resources.
+
+MapReduce Partitioning
+In MapReduce (MR), the default partitioning mechanism is based on the hash of the key and the number of reducers. When performing a shuffle operation, the partitioning formula used by MapReduce is:
+
+Hash of the key mod number of reducers:
+
+text
+Copy code
+Partition ID = Hash(key) % numReducers
+This ensures that each key is assigned to a partition (or reducer) based on the hash value of the key modulo the total number of reducers. The numReducers determines how many reducers the framework will use to process the data, and the hash of each key ensures that related keys are sent to the same reducer.
+
+Formula:
+
+text
+Copy code
+Partition ID = Hash(key) % numReducers
+For example, if you have 5 reducers and you are processing key-value pairs, the key "apple" would get hashed into a partition ID by calculating Hash("apple") % 5.
+
+Spark Partitioning
+In Apache Spark, the default partitioning mechanism for distributed data processing (like with RDDs or DataFrames) is also based on hashing the key modulo the number of partitions.
+
+Hash of the key mod number of partitions:
+
+text
+Copy code
+Partition ID = Hash(key) % numPartitions
+When performing transformations like groupByKey, reduceByKey, or join, Spark applies this partitioning formula to distribute data across the specified number of partitions. Like MapReduce, the numPartitions parameter controls how many partitions Spark will create.
+
+Formula:
+text
+Copy code
+Partition ID = Hash(key) % numPartitions
+For example, when performing a groupByKey operation with 10 partitions, the hash of each key will determine which partition the key-value pair will be sent to.
+
+Key Points for Both MR and Spark Partitioning:
+The key is hashed to ensure an even distribution of data across the partitions.
+Both MapReduce and Spark use a modulo operation with the total number of reducers or partitions to determine the partition ID.
+If the data has a skewed distribution, some partitions may end up with more data, causing imbalances, which can affect performance. This is why careful partitioning strategies are important in large-scale distributed systems.
+3) Hive Bucketing
+In Hive, bucketing is an approach to divide the data into a fixed number of buckets based on a hash function applied to a column (or multiple columns). This helps with performance, especially when performing joins or aggregations, by distributing the data evenly across the buckets.
+
+Hive Bucketing Formula
+The partitioning and bucketing formula in Hive uses a hash-based approach:
+
+Hash of the key mod number of buckets:
+
+text
+Copy code
+Bucket ID = Hash(key) % numBuckets
+Explanation: When data is loaded into a Hive table, the bucketing key (often a column like user_id, product_id, etc.) is hashed, and the result is taken modulo the number of buckets. This ensures that the data is evenly distributed across a fixed number of buckets, which can then be stored in separate files on disk.
+
+For example, consider a table of sales transactions. If you want to bucket by customer_id, and you specify 5 buckets, the data will be hashed using customer_id, and the modulo of 5 will determine into which bucket the data will go. The number of buckets is specified when creating the table in Hive.
+
+Formula:
+text
+Copy code
+Bucket ID = Hash(customer_id) % numBuckets
+If you have 5 buckets and the customer_id of a particular record hashes to a value of 7, it would go to the bucket with Bucket ID = 7 % 5 = 2.
+
+Advantages of Hive Bucketing:
+Improved Join Performance: If two tables are bucketed on the same column, Hive can perform more efficient bucketed joins, which reduces the need for expensive map-side joins and reduces shuffling.
+Faster Aggregations: Bucketing is useful for optimizing group-by and aggregation operations since the data is pre-distributed into manageable chunks (buckets).
+Data Organization: Bucketing allows for better organization of data on disk, which can improve query performance by reducing the amount of data read during operations.
+Summary of Key Partitioning and Bucketing Concepts:
+Feature	MapReduce Partitioning	Spark Partitioning	Hive Bucketing
+Partitioning Formula	Hash(key) % numReducers	Hash(key) % numPartitions	Hash(key) % numBuckets
+Key Distribution	Based on hash of the key mod number of reducers	Based on hash of the key mod number of partitions	Based on hash of the key mod number of buckets
+Use Case	Data shuffling and distributing keys to reducers	Data shuffling and distributing keys to partitions	Optimizing joins and aggregations
+Result	Data is distributed to reducers	Data is distributed to partitions	Data is divided into buckets
+Impact on Performance	Affects parallelism in MapReduce jobs	Affects parallelism in Spark jobs	Affects join and aggregation performance in Hive
+Conclusion
+In MapReduce, partitioning is done using the formula: Hash(key) % numReducers.
+In Spark, partitioning is done using the formula: Hash(key) % numPartitions.
+In Hive, bucketing is done using the formula: Hash(key) % numBuckets, where the data is stored in a fixed number of buckets, which helps optimize queries, particularly joins.
+
+
+	
+4) List of file formats used in Hive , What is the file format you have used and why ?
+	--> Text 585 GB 
+	--> RCFile 505 GB ( 14% smaller )  
+	--> Parquet 221 GB ( 62% smaller )  
+	--> ORC File 131GB ( 78% smaller ) 
+Summary of Why ORC and Parquet Are Preferred
+Storage Efficiency: ORC and Parquet are highly compressed compared to Text and RCFile formats, resulting in significant storage savings.
+
+ORC is typically the most storage-efficient, with 78% savings compared to the Text format in your case.
+Parquet is also highly efficient, with 62% storage savings compared to Text.
+Performance: Both Parquet and ORC support columnar storage, making them ideal for analytical workloads where only a subset of columns is queried. This results in faster query performance and lower I/O.
+
+ORC is optimized for Hive and has better compression and query performance for data stored in a data warehouse context.
+Parquet is more versatile and is well-supported across many big data tools like Apache Spark, Hive, and others.
+Compression:
+
+ORC files tend to compress data the most efficiently, reducing storage and improving read/write performance for analytic queries in Hive.
+Parquet is also highly compressed, but it is designed to be more flexible with nested structures and is widely adopted in data lakes.
+Conclusion
+Text files are simple but inefficient for large-scale processing, as they do not support compression or efficient querying.
+RCFile offers better compression than Text files and is suitable for some columnar queries, but it's less efficient than Parquet and ORC.
+Parquet provides significant space savings (62% smaller than Text files) and is efficient for read-heavy workloads, making it a good choice for many big data applications.
+ORC is the most efficient file format in terms of both storage and performance, offering 78% space savings compared to Text files. It is highly optimized for Hive and large-scale analytical queries.
+Recommendation: For most big data workloads, ORC is preferred for its performance and storage efficiency. If you're working with nested or semi-structured data, Parquet is a good option as well. 
+
+
+5) Hive ACID properties and tell all properties 
+1. Atomicity
+Atomicity ensures that a series of operations within a transaction are either fully completed or fully rolled back. If any operation in the transaction fails, all changes made by the transaction are undone.
+
+In Hive:
+Changes (e.g., INSERT, UPDATE, DELETE) in a transaction are either committed fully or not at all.
+Example: If you're updating 100 records, and the system crashes after updating 50, the transaction ensures that the update will be rolled back, and no partial update will be visible.
+2. Consistency
+Consistency ensures that any transaction will bring the database from one valid state to another. The integrity of the data is maintained, and constraints (like primary keys) are respected.
+
+In Hive:
+Only valid operations (e.g., inserts, updates) are allowed on transactional tables.
+After a transaction, data is in a valid state, maintaining integrity without breaking any rules (such as not introducing invalid data).
+3. Isolation
+Isolation ensures that transactions are independent of each other. The changes made by one transaction are not visible to other transactions until the transaction is committed.
+
+In Hive:
+Hive provides locking mechanisms (via DBTxnManager) to avoid conflicts between concurrent transactions.
+
+Isolation levels:
+
+Read Committed (default): Transactions can only read committed data and will see changes only after they are committed.
+Serializable: Provides stricter isolation to ensure that transactions behave as though they were executed one after the other.
+Example: If two users try to update the same row simultaneously, Hive ensures that one transaction is completed fully before the second one can start, preventing conflicts.
+
+4. Durability
+Durability ensures that once a transaction is committed, its changes are permanent and survive system crashes.
+
+In Hive:
+Committed transactions are written to disk, and their changes are persistent, even if the system crashes after the commit.
+
+Changes are logged in a Write-Ahead Log (WAL) to allow recovery in case of failure.
+
+Example: If a transaction is committed and a crash happens right after, the data will be intact and recoverable through WAL when the system restarts.
+
+Additional Key Concepts for ACID Transactions in Hive
+Transactional Tables:
+
+Tables that support ACID operations must be created as transactional tables.
+Create Table Example:
+sql
+Copy code
+CREATE TABLE my_table (
+    id INT,
+    name STRING
+)
+STORED AS ORC
+TBLPROPERTIES ('transactional'='true');
+File Format:
+
+ACID transactions require the table to be stored in ORC format, as it supports delta file management and efficient compression for large datasets.
+Write-Ahead Log (WAL):
+
+A log is maintained for all transactional operations to ensure durability and atomicity. The WAL helps in recovering the system to the last valid state if there is a failure.
+Compaction:
+
+Compaction in Hive is needed to merge small delta files created by updates and deletes into larger base files, which improves read performance and storage efficiency.
+
+
+6) Repartition and coalece 
+	--> repartitioning will do full shuffling
+	--> coalece will also do shuffling but will reduce them.
+1. Repartition
+Definition: repartition() is used to increase or decrease the number of partitions. It performs a full shuffle of the data.
+
+When to use:
+
+Use repartition() when you want to increase the number of partitions or redistribute data evenly across partitions. It is typically used when there is a need to optimize performance for subsequent operations (like when the number of partitions is too small for parallelism).
+It can also be used when performing a wide transformation that needs data reshuffling.
+Operation: It performs a full shuffle, meaning data is exchanged between all partitions, resulting in a complete re-distribution of the dataset.
+
+Example:
+
+scala
+Copy code
+val df_repartitioned = df.repartition(10)  // Increase to 10 partitions
+Cost:
+
+repartition() incurs a high cost because of the full shuffle operation, which can be slow and resource-intensive.
+The shuffle can result in disk and network I/O overhead.
+2. Coalesce
+Definition: coalesce() is used to reduce the number of partitions by merging adjacent partitions. Unlike repartition(), it does not perform a full shuffle but instead tries to minimize data movement by merging existing partitions.
+
+When to use:
+
+Use coalesce() when you want to reduce the number of partitions (usually in cases where you have a large number of small partitions and you want to reduce the overhead for output operations, like writing to disk).
+It is typically used when reducing the number of partitions for output (e.g., before writing to a file or database) to avoid too many small files.
+Operation: It performs a narrow shuffle (just merging adjacent partitions), which is more efficient than a full shuffle. The number of partitions will be reduced, but not evenly redistributed.
+
+Example:
+
+scala
+Copy code
+val df_coalesced = df.coalesce(2)  // Reduce to 2 partitions
+Cost:
+
+coalesce() is more efficient than repartition() because it does not involve a full shuffle. It only merges adjacent partitions, reducing the amount of data movement.
+Key Differences:
+Feature	Repartition	Coalesce
+Shuffling	Full shuffle (expensive)	Narrow shuffle (efficient)
+Purpose	Increase or redistribute partitions	Decrease partitions (e.g., for output)
+Use case	Used when increasing partitions or for operations that need full reshuffling	Used when reducing partitions, typically before writing data
+Performance Cost	Higher cost due to full shuffle	Lower cost due to merging adjacent partitions
+Operation Type	Data is shuffled across all nodes	Merges adjacent partitions to reduce the number of partitions
+Typical Use Case	When optimizing parallelism for computations or load balancing	Before saving output to disk, or when reducing partitions for performance
+
+
+	
+	
+7) I have 2 blocks in HDFS , I am going to run spark program ( how many input task count it will get created.) 
+	--> How many input blocks are there then same number of input tasks will get created
+Answer:
+If you have 2 blocks in HDFS, and you are running a Spark program that reads data from these blocks, then 2 input tasks will be created — one for each block.
+Reasoning:
+Spark creates an input task per block of data. Each task reads data from one block, processes it, and then proceeds to the next stage.
+In this case, if there are 2 blocks, Spark will create 2 tasks to process these blocks in parallel (assuming no other considerations like partitions or specific configurations that override this behavior).
+Example Breakdown:
+HDFS Data: Let's say you have a file in HDFS that is 256MB in size.
+This file will be split into 2 blocks, assuming the default block size of 128MB (or similar size based on your Hadoop configuration).
+Spark Tasks:
+When Spark reads the file, it will create 2 tasks because there are 2 blocks in HDFS.
+These 2 tasks will be executed in parallel, each processing one block of data from HDFS.
+Key Points:
+1 HDFS block = 1 Spark task.
+2 HDFS blocks = 2 Spark input tasks.
+This parallelism is a fundamental concept in distributed processing, where Spark divides work based on the input data's physical distribution in HDFS.
+
+	
+8) How many output taks will be created ( It dependents on no of partitions ) If i am not repartitioning how many ? 
+	--> if no repartitioning then no of input tasks is equal to no output tasks 
+If you do not perform repartitioning, the number of output tasks will be equal to the number of partitions that are available at the point of the final transformation or action. This will not be affected by the number of input blocks (HDFS blocks) directly unless your transformations explicitly cause data shuffling or repartitioning.
+
+If you don’t repartition the data, Spark will keep the same number of partitions as before (typically the default number of partitions after reading from HDFS, which is usually 200 partitions unless specified otherwise).
+In this case, the number of output tasks will be equal to the number of partitions in the RDD or DataFrame when the final action (e.g., collect(), save(), etc.) is triggered.
+
+	
+9) Spark word count program  
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.rdd.RDD
+
+object WordCount {
+  def main(args: Array[String]): Unit = {
+    
+    // Step 1: Initialize SparkSession
+    val spark = SparkSession.builder()
+      .appName("WordCount")
+      .master("local[*]") // Use local mode for testing, replace with a cluster mode in production
+      .getOrCreate()
+
+    // Step 2: Load text data (replace with your own file path)
+    val inputFilePath = "path/to/your/input/textfile.txt"
+    val textFile: RDD[String] = spark.sparkContext.textFile(inputFilePath)
+
+    // Step 3: Process the text data
+    val wordCounts = textFile
+      .flatMap(line => line.split("\\W+"))  // Split each line into words (using regex to handle non-word characters)
+      .map(word => (word.toLowerCase(), 1)) // Convert each word into a tuple (word, 1)
+      .reduceByKey(_ + _)                   // Count occurrences of each word by reducing the key
+
+    // Step 4: Show the result (top 10 words for example)
+    wordCounts
+      .sortBy(_._2, ascending = false)     // Sort by word frequency
+      .take(10)                             // Get the top 10 words
+      .foreach(println)                    // Print the top 10 word counts
+
+    // Step 5: Stop Spark session
+    spark.stop()
+  }
+}
+
+
+
+10) Spark sql to join 2 files/tables using dataframes . 
+import org.apache.spark.sql.{SparkSession, DataFrame}
+import org.apache.spark.sql.functions._
+
+object SparkSQLJoinExample {
+  def main(args: Array[String]): Unit = {
+
+    // Step 1: Initialize SparkSession
+    val spark = SparkSession.builder()
+      .appName("Spark SQL Join Example")
+      .master("local[*]")  // Using local mode for testing, replace with cluster config in production
+      .getOrCreate()
+
+    // Step 2: Load the data from two different CSV files into DataFrames
+    val df1: DataFrame = spark.read
+      .option("header", "true")      // Assume the first row contains column names
+      .csv("path/to/first_file.csv")  // Replace with actual file path
+
+    val df2: DataFrame = spark.read
+      .option("header", "true")      // Assume the first row contains column names
+      .csv("path/to/second_file.csv")  // Replace with actual file path
+
+    // Step 3: Perform the Join operation
+    // Assuming both DataFrames have a common column 'id' that we can join on
+    val joinedDF = df1
+      .join(df2, df1("id") === df2("id"), "inner")  // Inner join on the 'id' column
+
+    // Step 4: Show the result of the join
+    joinedDF.show()
+
+    // Optional: You can also perform additional transformations, such as selecting specific columns
+    val selectedColumnsDF = joinedDF
+      .select("df1.name", "df2.salary")  // Select columns from both DataFrames
+
+    selectedColumnsDF.show()
+
+    // Step 5: Stop SparkSession
+    spark.stop()
+  }
+}
+
+
+
+
+
+=========================================================+
+|				BigData									 |
+=========================================================+
+block size  --> 
+Block size is the unit of data storage in HDFS. By default, it is 128MB (can be configured).
+Large files are split into multiple blocks, and each block is stored on a separate node.
+The block size helps with parallel processing in distributed environments.
+
+
+hdfs nodes and its usages 
+NameNode: Manages metadata (file-to-block mapping, block locations) and controls file system operations.
+DataNode: Stores actual data in blocks. Each DataNode manages the storage of blocks on a local disk.
+Secondary NameNode: Performs periodic checkpoints of the NameNode's metadata (not a failover).
+
+
+how does job runs in spark .
+3. How Does a Job Run in Spark:
+SparkContext is initialized, which connects to the cluster.
+RDDs/DataFrames are created by reading data or applying transformations.
+When an action (like collect(), save()) is called:
+Spark creates a DAG (Directed Acyclic Graph) of stages.
+Each stage is split into tasks based on partitioning of the data.
+Tasks are executed in parallel across the cluster.
+Task scheduling and execution happen based on the data locality and resources.
+
+
+what is high availability
+HA in a distributed system ensures that the service remains operational even if a component fails.
+In HDFS, HA is achieved by setting up two NameNodes (active and standby), with ZooKeeper to handle failover.
+In Spark, HA can be implemented by having multiple Driver nodes and using a cluster manager like YARN or Kubernetes for fault tolerance.
+
+how the file with 200MB gets stores
+In HDFS, a 200MB file would be split into 2 blocks of 128MB each (default block size).
+The first block would hold the first 128MB.
+The second block would store the remaining 72MB.
+These blocks are stored on different DataNodes, depending on the cluster's configuration for block replication (usually 3 copies per block).
+
+small files problem
+Issue: HDFS is optimized for large files, and managing many small files (thousands of 1-10MB files) leads to inefficiencies.
+Excessive metadata overhead on the NameNode.
+Reduced throughput and inefficient storage.
+Solution: HBase, Parquet, ORC files, or combining small files into larger ones using tools like SequenceFile.
+
+difference between external and managed tables
+Managed Tables:
+Data is owned by Hive. When the table is dropped, both the metadata and the actual data are removed.
+Data is stored in the Hive warehouse directory (default /user/hive/warehouse in HDFS).
+External Tables:
+Data is not owned by Hive. Hive only manages the metadata.
+Data can reside anywhere in HDFS, and if the table is dropped, only the metadata is removed; the data stays intact.
+
+
+what are the components of hive
+Hive is a data warehouse built on top of Hadoop for querying and managing large datasets. It abstracts the complexities of Hadoop MapReduce with a SQL-like interface (HiveQL). The core components of Hive are:
+
+Hive Metastore:
+
+The central repository for all metadata (schemas, table definitions, partitions, etc.).
+Stores information about databases, tables, columns, types, partitions, and file locations.
+Can be configured to use relational databases like MySQL, PostgreSQL, etc., for persistence.
+Hive Driver:
+
+Responsible for receiving HiveQL queries and compiling them into execution plans.
+Communicates with the Hive Execution Engine to run the queries.
+Hive Execution Engine:
+
+Executes the query plan generated by the driver.
+It converts HiveQL into MapReduce jobs, Tez jobs, or Spark jobs (depending on the configuration).
+Hive CLI / Beeline:
+
+Command-line interface for interacting with Hive.
+Beeline is the newer, JDBC-based command-line tool.
+Hive UDFs (User Defined Functions):
+
+Hive supports custom user-defined functions (UDFs) that allow you to extend Hive's capabilities.
+
+
+
+HIVE DATA UNITS
+Hive organizes data using various data units to structure the data and queries efficiently. 
+DATABASES
+TABLES
+PARTIONS
+BUCKETS
+Databases: Logical namespaces to group tables.
+Tables: Store structured data with defined schemas. Can be managed or external.
+Partitions: Sub-divisions of tables that help optimize queries by limiting the amount of data read. (e.g., by year, month).
+Buckets: Further divisions of data within a table or partition based on a hash of a column. Helps in balancing data and optimizing certain operations like joins.
+
+
+
+file formats supported by hdfs
+
+TEXT FILE
+PARQUET  --> column oriented binary format
+AVRO   --------> serializaation , row based , compression , schema strict
+ORC ---> optimized row column format  , additional format is needed to parse the file
+SEQUENCE FILE  --> binary key value pair
+
+Text File: Simple but inefficient for large datasets.
+Parquet: Columnar, optimized for analytics and large-scale querying.
+Avro: Row-based, compact, schema evolution support.
+ORC: Optimized for performance and compression, often better than Parquet in Hadoop ecosystems.
+SequenceFile: Binary key-value pairs, mainly used in MapReduce.
+
+difference with rdd and dataframe 
+Feature	RDD	DataFrame
+Abstraction	Low-level, distributed collection of objects	High-level, distributed collection of data (like a table)
+API	Functional (map, filter, reduce, etc.)	SQL-like interface (select, groupBy, join, etc.)
+Performance	Not optimized	Optimized via Catalyst query optimizer
+Schema	No schema	Has schema (metadata for column names/types)
+Use Cases	Low-level data manipulation, custom transformations	Structured data, SQL-like queries, analytics
+Fault Tolerance	Lineage-based recovery	Inherited from RDD, with more abstraction
+Interoperability	Can hold any type of data	Can easily be queried with SQL
+Ease of Use	Requires manual handling of data and types	Easier to work with, especially for structured data
+Conclusion:
+RDDs offer flexibility and fine-grained control over data processing but require more effort and lack optimization.
+DataFrames are easier to use, more powerful for structured data, and offer significant performance improvements through Spark SQL optimization. For most use cases, DataFrames are recommended unless there's a need for low-level control or specific custom transformations.
+
+
+RDD operations name few . 
+Narrow vs. Wide Transformation in RDD Operations:
+Transformation	Type	Explanation
+map()	Narrow	Applies a function to each element, and outputs a new RDD with the same number of partitions as the original. No data shuffle required.
+flatMap()	Narrow	Similar to map(), but can return 0 or more output elements for each input element. Data is not shuffled.
+filter()	Narrow	Filters the elements based on a predicate. Data is not shuffled, and each partition processes its own data.
+distinct()	Wide	Removes duplicate elements. This requires shuffling because the data needs to be grouped and checked across all partitions.
+union()	Wide	Combines two RDDs into one. Since data from both RDDs may come from different partitions, shuffling is required to combine them.
+intersection()	Wide	Returns the common elements between two RDDs. Data needs to be shuffled across partitions to find the common data.
+subtract()	Wide	Returns elements of the first RDD that are not in the second RDD. This requires a shuffle to identify the difference.
+groupBy()	Wide	Groups elements by a specified function. This requires shuffling to move data between partitions for grouping.
+reduceByKey()	Wide	Groups data by key and performs a reduction operation. This requires shuffling to group values by their keys.
+mapValues()	Narrow	Applies a function to each value in a key-value RDD, but does not require a shuffle (partitions are processed locally).
+
+Actions (trigger execution): collect(), count(), reduce(), first(), saveAsTextFile()
+
+
+
+data skewing ---------------->  Data with some key A has 1Lakh values and B has only 50 values so data is skewed data
+
+Salting technique -------------> to resovle the data skewing technique we use salting adding some random number to form multiple keys and work
+Salting is a technique used to mitigate data skew in distributed processing. Data skew occurs when some keys in your data are much more frequent than others, leading to an uneven distribution across partitions. This can result in some tasks being much slower than others.
+
+Salting involves adding a random value (salt) to the key to spread the skewed data across multiple partitions. Here's how it works:
+
+Steps for Salting:
+Add a Random "Salt" to the Key:
+
+For the skewed key, you append or prepend a random number (salt) to it.
+This creates multiple variations of the same key and distributes them across partitions.
+Perform the Operation:
+
+After salting, you perform operations like join, groupBy, or aggregation.
+Remove the Salt (if necessary):
+
+After the operation, you can strip the salt to return to the original key.
+Example:
+Suppose you have a dataset where most data is associated with a popular product ID (e.g., product_id 1234), causing skew in a join operation.
+
+Original Data:
+
+Dataset 1: product_id, sales
+Dataset 2: product_id, product_name
+Salting: Add a random number (salt) to the product_id to create multiple keys.
+
+scala
+Copy code
+val saltedData1 = dataset1.withColumn("salted_product_id", concat(col("product_id"), lit("_"), (rand() * 10).cast("int")))
+val saltedData2 = dataset2.withColumn("salted_product_id", concat(col("product_id"), lit("_"), (rand() * 10).cast("int")))
+This would convert product_id = 1234 into 1234_0, 1234_1, 1234_2, etc., for both datasets.
+
+Join the Data: Join the datasets on the salted product_id.
+
+scala
+Copy code
+val joinedData = saltedData1.join(saltedData2, saltedData1("salted_product_id") === saltedData2("salted_product_id"))
+Remove the Salt: After the join, remove the salt to restore the original product_id.
+
+scala
+Copy code
+val finalData = joinedData.withColumn("product_id", split(col("salted_product_id"), "_").getItem(0))
+                          .drop("salted_product_id")
+Why Salting Works:
+By adding random numbers, the skewed data (e.g., product_id = 1234) is spread across multiple partitions, reducing the workload on any single partition and improving performance.
+Summary:
+Salting adds a random number to a skewed key to distribute the data evenly across partitions.
+This helps to avoid bottlenecks in operations like joins or groupBy.
+
+
+
+
+Hot keys issue 
+how to resolve hotkeys in bigdata 
+Hot Key Issue: Occurs when a small number of keys have an excessive number of records, causing an imbalance in data processing.
+Solutions:
+Salting: Add randomness to the key to spread the data evenly across partitions.
+Bucketing: Organize data into buckets to improve partitioning.
+Shuffling: Use repartitioning or coalescing to balance the data.
+Broadcast Joins: For smaller datasets, broadcast them across all nodes.
+Key Range Splitting: Split key ranges to ensure even distribution.
+Tuning Spark: Adjust configurations to improve performance.
+Custom Partitioning: Implement custom partitioning to handle skew more effectively.
+
+
+
+Combiner function in spark:
+A Combiner function is used in Spark to perform partial aggregation before shuffling data across nodes. It allows Spark to reduce the amount of data shuffled during operations like reduceByKey, aggregateByKey, or combineByKey.
+
+Combiner: This is essentially an optimization technique that combines intermediate results (locally) before sending them across the network to other nodes.
+
+Where it is used: It is used in aggregate operations to combine results efficiently without incurring the full cost of a global aggregation.
+
+How Combiner Works:
+For an operation like reduceByKey:
+
+Locally combine values on each partition (in-memory), reducing the data before shuffling.
+Then, globally combine the results across all partitions.
+This process minimizes the data shuffled during the network transfer.
+
+Combiner Example in combineByKey:
+The combineByKey function is a generalization of operations like reduceByKey. It allows you to provide a combiner function (a way to combine values) that is applied locally on each partition and globally across partitions.
+
+scala
+Copy code
+val rdd = sc.parallelize(Seq(("a", 1), ("b", 2), ("a", 3), ("b", 4), ("a", 5)))
+
+val combined = rdd.combineByKey(
+  (value: Int) => value,                           // Initial combiner (value as is)
+  (acc: Int, value: Int) => acc + value,           // Combiner for combining values locally
+  (acc1: Int, acc2: Int) => acc1 + acc2           // Combiner for combining results across partitions
+)
+
+combined.collect()  // Output: Array(("a", 9), ("b", 6))
+
+
+
+cogroupbykey in spark:
+The cogroupByKey operation is used to combine two RDDs (or DataFrames) by their keys. It performs a groupBy on each key from both RDDs and returns a new RDD containing the co-grouped result. It combines the values for each key from both RDDs into a pair of collections.
+
+cogroupByKey is essentially the combination of two groupByKey operations: one for each RDD, which results in the co-grouped values.
+Syntax:
+scala
+Copy code
+rdd1.cogroup(rdd2)
+This operation performs a full outer join on the keys, meaning that it includes all keys from both RDDs, and for any key that exists in one RDD but not the other, it will return an empty collection for the missing key.
+
+Key Points:
+It returns an RDD of key-value pairs, where the key is the common key from both RDDs, and the value is a tuple of two collections: one from the first RDD and one from the second RDD.
+If a key exists in one RDD but not the other, the missing collection will be empty.
+
+
+
+ 
+How spark manages kafka offsets -------------->Checkpointing , Zookeeper stores last processed msg 
+Checkpointing: Spark uses checkpointing to manage Kafka offsets. In structured streaming, the offsets are stored in a checkpoint directory (typically HDFS or a distributed file system). This ensures that if a failure occurs, Spark can resume processing from the last successfully processed offset.
+
+Zookeeper: Earlier, Zookeeper was used to store Kafka offsets, especially in legacy systems. In modern Kafka implementations (since Kafka 0.9), Kafka stores offsets in its internal __consumer_offsets topic, but in Spark, Kafka offsets can still be stored in Zookeeper for backward compatibility or legacy use.
+
+
+how Kafka manages offsets  ------------> offset id same as networking window sliding protocol or handshake protocol
+Offset ID: Kafka tracks the offset ID for each message in a topic. Each message within a partition has a unique offset, and consumers use these offsets to keep track of which messages they have consumed.
+The offset ID in Kafka acts similarly to the sliding window protocol in networking, where consumers manage the sliding window of messages they consume, ensuring they process data in order without missing or repeating messages.
+Networking/Sliding Window Protocol: The offset is akin to a handshake protocol in networking because consumers use it to acknowledge which message they've processed, allowing them to track the state of message consumption.
+
+
+What happens when a Kafka node goes down -----------> If its leader they will elect new leader , replication factor will not allow if no of required nodes are not available
+Leader Election: If the Kafka broker that holds the leader of a partition goes down, Kafka will automatically elect a new leader from the replicas available. This ensures that partition availability is maintained.
+
+Replication Factor: Kafka uses replication to ensure fault tolerance. If the replication factor is greater than 1, the system ensures that data is available even if some brokers go down. However, if the number of in-sync replicas (ISRs) is less than the required replication factor, Kafka will mark the partition as unavailable, preventing data loss.
+
+
+
+how hbase stores the data based on the row keys ----------> row key and column based table
+HBase organizes data by row keys and stores it in column families.
+Data is stored sorted by row key, which allows efficient retrieval for range queries.
+Row keys determine the physical storage layout in HBase, and regions are based on row key ranges.
+The column family approach optimizes for reading related data together, which improves performance.
+
+
+ 
+When to use a key-value no sql database and when to use a document type no sql database   ---------> 
+Use a Key-Value store when the use case is simple and you only need fast key-based access to individual data points.
+Use a Document store when you need to store more complex, structured data (like JSON documents) and perform rich queries based on document attributes.
+
+what is the difference --------> group of key-value paired data is known as document type data represented in JSON format
+Key Differences:
+Feature	Key-Value Database	Document Database
+Data Model	Simple key-value pairs	Documents (JSON, BSON, XML) that can store nested, complex data
+Structure	Values are opaque (can be anything, but not structured)	Structured data with nested fields (like JSON)
+Use Cases	Simple, fast lookups by key (e.g., caching, session)	Complex data that can vary in structure (e.g., CMS, user profiles)
+Querying	Retrieve by key, no complex querying	Can query documents by field values and indices
+Example Databases	Redis, DynamoDB (key-value), Riak	MongoDB, CouchDB, RavenDB
+Performance	Extremely fast for key-based lookups	Slower than key-value stores, but supports complex queries
+Flexibility	Simple and highly efficient for key-based access	Highly flexible with a dynamic schema
+
+
+
+
+
+==============SPARK FILE FORMATS=======================
+Text Files
+JSON Files
+CSV/TSV Files
+Sequence Files
+Object Files
+
+what is data skewing  , salting technique 
+
+
+=======================================================================
+KAFKA 																 ||
+=======================================================================
+
+Components in KAFKA 
+
+Producer , consumer topic, zookeper
+
+partition , replicate , In-Sync-Replica , Leader , Follower 
+
+Log compaction , offsetid 
+
+API --> Producer API , Consumer API , COnnector API , Stream API
+
+
+
+
+
+
+
+=========Scala ==============
+OOPS concepts 
+Encapsulation: Scala allows for better encapsulation by using private, protected, and public access modifiers for fields and methods.
+Inheritance: Scala supports single inheritance for classes but allows multiple inheritance through traits (a more flexible form of interfaces in Java).
+Polymorphism: Scala supports method overloading and overriding. It also supports dynamic polymorphism via traits and abstract classes.
+Abstraction: You can define abstract classes and traits to achieve abstraction. Traits are more flexible than Java interfaces.
+
+
+method overloading and overriding
+Method Overloading:
+Scala allows method overloading (same method name but different parameters).
+
+Overloading example:
+class Calculator {
+  def add(a: Int, b: Int): Int = a + b
+  def add(a: Double, b: Double): Double = a + b
+}
+Method Overriding:
+Overriding is done by using the override keyword in Scala. It allows a subclass to provide a specific implementation for a method that is already defined in a superclass or trait.
+
+Overriding example:
+class Animal {
+  def sound(): Unit = println("Animal sound")
+}
+
+class Dog extends Animal {
+  override def sound(): Unit = println("Bark")
+}
+
+
+clean code principles
+Use descriptive variable/method names: Choose names that clearly indicate their function.
+Avoid long methods: Break down your methods into smaller, reusable pieces.
+Comment and document code: Although Scala promotes concise code, you should still document complex parts of the code.
+Use immutability: Prefer val over var (immutable over mutable) to avoid side effects.
+Avoid nested loops and conditionals: Try to reduce the complexity of the methods.
+Use higher-order functions: Scala's functional capabilities (like map, flatMap, filter) help to keep code concise and clean.
+
+
+coding standards
+Consistent naming conventions:
+Classes and objects: Use CamelCase (e.g., MyClass, PersonDetails).
+Variables and functions: Use lowerCamelCase (e.g., myVariable, calculateTotal).
+Constants: Use UPPER_CASE (e.g., MAX_SIZE).
+Immutability by default: Always prefer val over var unless mutability is explicitly needed.
+Avoid side-effects: Use pure functions that don't modify external state.
+
+
+explain few maven commands
+Build project:
+mvn clean install
+Run the project (for a Scala project with the correct configuration):
+mvn exec:java
+Clean the project (removes all compiled artifacts):
+mvn clean
+Compile project:
+mvn compile
+
+
+Collections 
+List: Immutable, indexed sequence.
+val list = List(1, 2, 3, 4)
+Array: Mutable, fixed-size sequence.
+val array = Array(1, 2, 3, 4)
+Set: A collection of unique elements.
+val set = Set(1, 2, 3, 4)
+Map: A collection of key-value pairs.
+val map = Map("name" -> "John", "age" -> 25)
+Option: Represents a value that may or may not be present (Some or None).
+val maybeNumber: Option[Int] = Some(5)
+val noneNumber: Option[Int] = None
+
+
+Access modifiers --> public private , protected.
+public: By default, members are public.
+private: Restrict access to within the class or object.
+protected: Can be accessed in the class and its subclasses.
+class MyClass {
+  private var x = 10
+  protected var y = 20
+}
+
+
+Error handing mechanism in scala , try  - catch , finally , throw and throws. UserDefined Exceptiosn
+Summary of Error Handling Approaches
+Approach	Use Case	Example
+Exceptions	When the code might throw an unexpected exception.	try/catch/finally blocks.
+Option	When a result might be absent (e.g., no result, not found).	Option[T], e.g., Some(value) or None.
+Either	When the operation can succeed or fail, and you want detailed error handling.	Either[Error, T], e.g., Left("error") or Right(value).
+Try	When you're working with code that may throw exceptions, but you want to handle them functionally.	Try[T], e.g., Success(value) or Failure(exception).
+When to Use Which?
+Use Option when you expect a value to be present or absent (no exceptions).
+Use Either when you want to handle both success and failure cases explicitly, with detailed error messages or types.
+Use Try when you need to handle exceptions in a functional style but still work with code that throws exceptions (e.g., IO operations, database queries, etc.).
+Use try/catch/finally when you need to catch Java-style exceptions, perform clean-up tasks, or handle low-level exceptions directly.
+
+User-defined Exceptions:
+In Scala, custom exceptions can be defined by extending the Exception class.
+class CustomException(message: String) extends Exception(message)
+throw new CustomException("Something went wrong!")
+
+
+Can we override static methods 
+No, Scala does not have static methods like Java. Instead, Scala uses companion objects. A companion object can define methods that behave like static methods, but you can't "override" them as you would in Java because they belong to the object, not an instance of a class.
+
+
+main objective of garbage collection
+What part of memory - Stack or Heap - is cleaned in garbage collection process  Heap.
+Main Objective: The goal of garbage collection (GC) is to automatically manage memory by reclaiming memory used by objects that are no longer in use.
+Heap: Garbage collection occurs in the heap memory, where Scala objects are stored. It does not clean the stack memory.
+JVM-based: Since Scala runs on the JVM, it relies on the JVM's garbage collector (e.g., G1 GC, CMS) to handle memory management.
+
+
+difference between abstract class and trait
+An abstract class is for shared behavior that can be partially implemented.
+A trait is primarily used for composition and can be mixed into different classes.
+
+
+
+Coding Questions 
+
+Write the pseudo code for fibonnaci numbers 
+def fibonacci(n: Int): Int = {
+  if (n <= 1) return n
+  fibonacci(n - 1) + fibonacci(n - 2)
+}
+
+
+Reverse of the number
+def reverseNumber(n: Int): Int = {
+  var reversed = 0
+  var number = n
+  while (number != 0) {
+    val digit = number % 10
+    reversed = reversed * 10 + digit
+    number = number / 10
+  }
+  reversed
+}
+
+
+
+Can you write loops for printing below pattern
+*
+**
+***
+****
+*****
+****
+***
+**
+*
+
+// Printing the pattern
+def printPattern(): Unit = {
+  // Upper part
+  for (i <- 1 to 5) {
+    println("*" * i)
+  }
+
+  // Lower part
+  for (i <- 4 to 1 by -1) {
+    println("*" * i)
+  }
+}
+
+printPattern()
+
+
+
+
+
+====================================================================================================================================================== 
+====================================================================================================================================================== 
+
+Technical Interview Flow
+
+Preparation
+		
+"OK indicators" that are good to initiate further dialog:
+
+“... designed and implemented cache layer of web application” — The candidate uses generic phrases due to strict NDA.
+“... developed and designed critical software products for financial tracking & reporting” — The candidate uses generic phrases due to strict NDA.
+“...improved online store search engine performance with use of Apache Solr” — The candidate worked without any NDA.\
+
+
+
+====================================================================================================================================================================
+						SOFT SKILLS QUETIONS 
+====================================================================================================================================================================
+
+SOFT SKILLS QUETIONS 
+1.	Tell me about your professional accomplishments (some specific tasks or features) you are proud of?
+one of my proudest achievements was recently i have worked on One POC by using GenAI. where i am working to create the readme file for the git repository by using aws sagemaked, python script, genAI and prompt engineering concept. 
+
+2.	Tell me about the task/ situation that was a real challenge/ tough stuff for you/ serious professional mistake over the past 6 months?
+We faced a challenge when integrating a new batch processing job for legal documents, where we encountered data inconsistencies due to improper handling of timestamps and data types. This led to delayed results. I implemented a more robust data validation process and added retries for failed records to ensure consistency. This helped maintain data integrity and reduce processing errors in subsequent jobs.
+
+3.	(for seniors and leads) Imagine you have a task from the customer and several approaches/ tools/ ways to complete it (be more specific here, in accordance with the profession of the candidate). Which tool would you choose and why? Please guide me through your reasoning.
+"For a task where I need to process large volumes of legal data in batch mode, I would choose AWS EMR with Apache Spark due to the scalability it offers for distributed computing. For storing the results, I'd opt for S3 due to its cost-effectiveness for large datasets. AWS Glue might be used for ETL processes if we need a serverless approach for scaling operations with minimal management overhead."
+
+4.	Tell me about a situation when you had to skip/ neglect minor rules while aiming to achieve your goal (faster).
+"During a tight deadline for a legal data processing job, we had to skip some minor data validation checks to ensure the pipeline ran on time. However, we scheduled an additional validation step post-processing and ran manual checks to ensure that no critical data was missed or corrupted."
+
+5.	Tell me about a task you had to complete very quickly, yet you did not have all the information you needed.
+"I once had to troubleshoot a batch data job that failed in production, but the error logs were incomplete. I quickly communicated with the data scientists and product owners to gather more context and then traced the issue back to incorrect data formatting in a DynamoDB source. I implemented a quick patch and fixed the schema mismatch issue.""   you can also m,etion about threshold failed in prod sm 
+
+6.	(for senior and leads) Please describe a situation where you demonstrated your leadership.
+"As a Senior Data Engineer, I led a project to optimize our batch processing pipeline that ingests large legal documents from S3 into a DynamoDB database. I delegated tasks among junior engineers, set clear milestones, and provided mentorship in Spark and SQL best practices. This ensured we met the deadline and improved the overall pipeline efficiency by 30%."
+
+7.	Please describe a situation where you had to challenge decision of your colleague, manager or more experienced member of a team.  here you can metion the aws instance type recently working on sm
+"There was a disagreement between me and a colleague about whether to process batch data using AWS Glue or EMR. I disagreed with using Glue for the job because of its limitations in handling complex transformations for large datasets. I backed my reasoning with performance benchmarks and past experiences, and we eventually decided to use EMR with Spark, which proved to be more scalable for the project."
+
+
+8.	Tell me about a project with an aggressive timeline.
+"I worked on a project where we needed to migrate legacy legal data into AWS S3 within a 2-week window. To meet the deadline, I prioritized essential tasks, reduced the scope of some non-critical features, and automated the data validation and error-handling processes using AWS Lambda and Step Functions. We delivered the migration on time and under budget."
+
+9.	Tell me about the most unusual or creative idea that you’ve ever come up with.
+"I came up with an innovative solution to improve batch data reconciliation for legal documents by using DynamoDB as a staging area for processing and S3 for final storage. This allowed us to quickly process and validate data in DynamoDB before storing it in S3, reducing the overall data reconciliation time by 50%."
+
+10.	(for mature A2 and A3-4) Suppose you were asked to lead a team…
+"If I were asked to lead a team, my first steps would be to understand the project requirements and align the team on objectives. I would ensure the team is familiar with the tech stack (e.g., Spark, AWS), set up CI/CD pipelines using AWS CodePipeline, and establish clear coding standards. I’d also prioritize collaboration, conducting regular stand-ups to address blockers and ensure consistent progress."
+
+11.	What would you start with? How do you think you would handle a situation, if…
+"If faced with conflicting priorities, I would first identify which task provides the most value to the customer or the business. I’d consult with the team to understand their capacity and make sure that we prioritize accordingly. For example, if an urgent batch data job needs immediate attention, I would balance the timelines and resources to ensure that critical deliverables are met without sacrificing quality."
+
+12.	Someone disagreed with your recommendations.
+"When someone disagrees with my recommendations, I make sure to listen carefully to their concerns. In one case, a colleague suggested using a different data storage solution than I recommended. I presented my reasoning with data performance benchmarks and showed how the other solution would incur higher costs. In the end, we reached a consensus on the best solution after considering all factors."
+
+13.	You were asked to do something for which you didn’t have proper technical skills?
+"I was once asked to implement a serverless data pipeline using AWS Lambda, a technology I had limited experience with. I took the initiative to complete a few AWS courses, consulted with team members who had expertise in Lambda, and successfully built the pipeline with improved scalability and reduced costs."
+
+14.	You were trying to confirm a decision and your manager wasn’t getting back to you?
+"If my manager is unavailable, I take the initiative to move forward by gathering more context and working with stakeholders to make a decision. For instance, in a project, I had to move forward with data format decisions without a prompt response, so I consulted with the data team and ensured we chose a solution aligned with the business requirements."
+
+15.	As a Lead SE you are on a project working with five other engineers. The group opinion on the proper design to proceed with divided: half the group wants to proceed one way and the other half wants to take another way. How would you handle this situation?
+"In this situation, I would first facilitate a discussion where each team member can present their reasoning and approach. We would compare the pros and cons of each solution and look for a data-driven way to decide. If needed, I would gather further input from other teams or stakeholders to make the best decision."
+
+16.	If you were given complete freedom of choice how would your ideal project/team look like?
+"My ideal team would have a strong collaborative culture with a mix of senior and junior engineers. We’d use AWS for scalability, Spark for distributed batch processing, and CI/CD pipelines for smooth deployment. I’d focus on creating a team where each member has a growth path and is encouraged to continuously learn new technologies."
+
+	
+STARS SCHEMA 
+
+S = SITUATION
+T = TASK / TRUBLE
+A = ACTIONS
+R = RESULTS / ROADBLOCKS
+S = SELF-APPRAISAL
+
+
+
+
+
+Which AWS services you can suggest to replace Snowflake from your access layer (project logical architecture schema)?
+[Wednesday 4:48 PM] Timofei Liakhor
+2. What data formats did you use in Landing/RAW/Unification layers? Why did you choose them? 
+[Wednesday 4:50 PM] Timofei Liakhor
+parquet vs csv
+[Wednesday 4:51 PM] Timofei Liakhor
+delta vs parquet
+[Wednesday 4:53 PM] Timofei Liakhor
+3. How can we run Spark Jobs in AWS environment? Advantages and disadvantages of each approach.
+[Wednesday 4:58 PM] Timofei Liakhor
+4. You joined a new team. They said that the ETL pipeline (Spark) which was created 1 year ago is working slowly now. How are you going to investigate and fix the possible issues?
+[Wednesday 5:05 PM] Timofei Liakhor
+z order
+[Wednesday 5:07 PM] Timofei Liakhor
+5. You joined a new team. They gave you a new laptop and provided access to Github repos. Also, they asked you to download projects to your laptop and run unit tests. This team uses 2 projects in 2 different repositories. 1st project uses python 3.10 and pandas 2.0.0. 2nd project uses python 3.11 and pandas 2.2.0. Can you describe your next steps?
+
+[Wednesday 5:12 PM] Timofei Liakhor
+You have to choose between 2 AWS technologies and persuade your customer that your choice is correct. Your steps?
+[Wednesday 5:15 PM] Timofei Liakhor
+2. You PM called you via teams on Friday evening and asked to work tomorrow to be able to meet project deadlines. What are you going to do?
+[Wednesday 5:18 PM] Timofei Liakhor
+3. Your BA asked you to fix minor bug and deploy it to production without QA phase as soon as possible. What are your actions?
+[Wednesday 5:21 PM] Oleksandr Lutsenko
+Can you compare Hadoop HDFS and AWS S3? What are the main differences and similarities between the two? How would you decide which storage to use for the new project?
+[Wednesday 5:25 PM] Oleksandr Lutsenko
+Your Spark application has failed with some undescriptive error (Executor failed, Remote RPC client disconnected etc.). How would you approach debugging and fixing this issue?
+[Wednesday 5:28 PM] Oleksandr Lutsenko
+What would you choose: traditional Spark or Spark on Databricks? What are the main differences which affect your decision?
+[Wednesday 5:31 PM] Oleksandr Lutsenko
+Suppose you need to read a large CSV file in PySpark, but you're encountering out-of-memory errors. How would you resolve this issue? 
+[Wednesday 5:36 PM] Oleksandr Lutsenko
+Let’s imagine that you have been assigned as a mentor for the newcomer on the project (L1, L2). How would you approach such assignment? Describe previous experience with similar tasks, what issues have occurred and how have you resolved those issues
+[Wednesday 5:39 PM] Oleksandr Lutsenko
+How would you approach estimating a task where a new technology is used and no one in the team has no experience with.  Could you please tell me what estimation techniques you have personally used on the projects and what other techniques do you know? 
+[Wednesday 5:41 PM] Oleksandr Lutsenko
+a task that appears to be more complex than it was thought and taking more time than previously estimated. What would you do in such case?
+[Wednesday 5:43 PM] Oleksandr Lutsenko
+Let’s imagine that you are assigned as a team lead on a project. You have noticed that one of your colleagues is constantly underperforming for some time, taking too much time to do simple tasks. How would you approach providing your feedback and finding the reason of that?
+ 
