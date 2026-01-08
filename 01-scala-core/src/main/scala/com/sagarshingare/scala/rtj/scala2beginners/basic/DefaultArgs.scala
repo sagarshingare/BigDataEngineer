@@ -1,4 +1,4 @@
-package com.sagarshingare.scala.core.basic
+package com.sagarshingare.scala.rtj.scala2beginners.basic
 
 object DefaultArgs extends App {
 
